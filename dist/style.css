@@ -1009,6 +1009,13 @@ body {
 		width: fit-content;
 }
 
+.wa-bubble-image-custom {
+	background-color: #075E54 !important;
+	/* WhatsApp Dark Teal for images */
+	padding: 3px !important;
+	/* Tight padding to show outline */
+	border-radius: 0px 12px 12px 12px !important;
+}
 .wa-bubble-audio-custom .audio-play-btn {
 	background: rgba(255, 255, 255, 0.2);
 	color: #fff;

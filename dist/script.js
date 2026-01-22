@@ -52,13 +52,13 @@ const IMAGE_PLACEHOLDER = "dist/assets/blur.jpg";
 const AUDIO_MSG_SRC = "dist/assets/sounds/nico_audio.ogg"; 
 const STICKER_THUMB = "dist/assets/sticker.png"; 
 const DOC_ICON_PATH = "dist/assets/doc_icon.png"; // Placeholder
-const INJURY_IMG = "dist/assets/injury_blur.jpg"; // Placeholder for Node 1
+const HAND_IMG = "dist/assets/hand.jpg"; // Placeholder for Node 1
 const LICENCIA_DOC = "dist/assets/licencia_medica.pdf"; // Placeholder for Node 6
 
 /* --- GAME DATA --- */
 const stickers = {
-    ok: "dist/assets/sticker_ok.webp", 
-    gg: "dist/assets/sticker_gg.webp"
+    ok: "dist/assets/sticker-ok.webp", 
+    gg: "dist/assets/sticker-gg.webp"
 };
 
 const gameScript = [
@@ -66,7 +66,7 @@ const gameScript = [
 		id: 1,
 		time: "08:12",
 		text: "Te cuento po, me corté la mano con una lámina en el taller. ¿Qué hago? 😰",
-		media: { type: 'image', content: INJURY_IMG }, // Added Injury Image
+		media: { type: 'image', content: HAND_IMG }, // Added Injury Image
 		options: [
 			{ 
 				text: "Avísale de inmediato a tu jefatura para que emita la DIAT y te acompaño al centro de la mutual/ISL.", 
@@ -76,7 +76,7 @@ const gameScript = [
 				feedback: "✅ +2 pts. Activaste el proceso de denuncia y atención por el seguro laboral." 
 			},
 			{ 
-				text: "Lávate, ponte una venda y veamos si se pasa.", 
+				text: "Dejate la venda nomás y veamos si se te pasa.", 
 				score: 0, 
 				reaction: "¿Seguro? Es que sangra caleta…",
 				bossMessage: "❌ ¡Ojo! Ignorar un accidente grave puede traer sanciones y agravar la lesión.",
@@ -1031,7 +1031,7 @@ function WhatsAppSimulator() {
 			const imgMsg = { 
 				id: "img-1", 
 				type: "image", 
-				content: INJURY_IMG, 
+				content: HAND_IMG, 
 				timestamp: "08:11" 
 			};
 			addMessage("nico", imgMsg);
@@ -1054,7 +1054,7 @@ function WhatsAppSimulator() {
             if (callTimerRef.current) clearTimeout(callTimerRef.current);
             callTimerRef.current = setTimeout(() => openCall(), 10000);
 
-		}, 12000);
+		}, 9000);
 	};
 
 	const navigateToChat = (chatId) => {
@@ -1348,7 +1348,7 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 				chatId === 'eval' ? "Resultados de la actividad." : "Mensajes con Jefatura."
             ),
             messages.map(msg => 
-                React.createElement("div", { key: msg.id, className: `wa-bubble wa-bubble-${msg.type} ${msg.type === 'audio' ? 'wa-bubble-audio-custom' : ''} ${msg.type === 'contact_link' ? 'wa-bubble-ai' : ''}`, 
+                React.createElement("div", { key: msg.id, className: `wa-bubble wa-bubble-${msg.type} ${msg.type === 'audio' && chatId === 'nico' ? 'wa-bubble-audio-custom' : ''} ${msg.type === 'image' && chatId === 'nico' ? 'wa-bubble-image-custom' : ''} ${msg.type === 'contact_link' ? 'wa-bubble-ai' : ''}`, 
 					style: msg.type === 'contact_link' ? { padding: 0, background: 'transparent', maxWidth: '300px' } : {} },
                     React.createElement("div", { className: "wa-bubble-content" },
 						renderMessageContent(msg),
