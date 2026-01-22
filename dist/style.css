@@ -450,6 +450,20 @@ body {
 	cursor: pointer;
 }
 
+.wa-unread-badge {
+	background-color: #25D366;
+	color: white;
+	min-width: 20px;
+	height: 20px;
+	border-radius: 10px;
+	font-size: 10px;
+	font-weight: bold;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 0 4px;
+	margin-top: 4px;
+}
 /* --- WHATSAPP CHAT INTERFACE --- */
 
 .wa-chat-view {
@@ -774,22 +788,25 @@ body {
 .audio-bubble {
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: 6px;
 	width: 100%;
-	min-width: 240px;
+	min-width: 400px;
+		/* Wider as requested */
+		padding: 6px 12px;
+		/* Slimmer vertically */
+		height: 64px;
+		/* Fixed height to match avatar area roughly */
 }
 
 .audio-play-btn {
-	background: #eee;
 	border: none;
-	width: 36px;
-	height: 36px;
+	width: 40px;
+		height: 40px;
 	border-radius: 50%;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	cursor: pointer;
-	color: #555;
 	flex-shrink: 0;
 	transition: background 0.2s;
 }
@@ -799,21 +816,20 @@ body {
 }
 
 .audio-track {
-	flex: 1;
-	height: 24px;
+	height: 28px;
 	display: flex;
 	align-items: center;
 	position: relative;
-	gap: 2px;
+	width: 100%;
 }
 
 .audio-waveform {
 	display: flex;
 	align-items: center;
-	gap: 2px;
+	gap: 3px;
 	height: 100%;
 	flex: 1;
-	opacity: 0.6;
+	opacity: 0.7;
 }
 
 .audio-waveform span {
@@ -837,11 +853,14 @@ body {
 
 .audio-info {
 	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: flex-end;
-	gap: 2px;
-	margin-left: 8px;
+	flex-direction: row;
+		/* Row for info */
+		justify-content: space-between;
+		align-items: center;
+		color: rgba(0, 0, 0, 0.45);
+		font-size: 11px;
+		margin-top: 4px;
+		width: 100%;
 }
 
 .audio-duration {
@@ -849,6 +868,14 @@ body {
 	color: #777;
 }
 
+.audio-content-wrapper {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-width: 0;
+	margin-left: 4px;
+}
 /* --- STICKERS --- */
 .wa-sticker {
 	max-width: 140px;
@@ -977,6 +1004,9 @@ body {
 	background-color: #075E54 !important; /* WhatsApp Dark Teal */
 	color: rgba(255, 255, 255, 0.9);
 	border-radius: 0px 12px 12px 12px !important; /* Start slightly square on top-left */
+	max-width: 90% !important;
+		/* Allow it to be wider than text messages */
+		width: fit-content;
 }
 
 .wa-bubble-audio-custom .audio-play-btn {

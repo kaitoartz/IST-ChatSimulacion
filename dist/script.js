@@ -1,5 +1,6 @@
 
-import React, { StrictMode, useEffect, useLayoutEffect, useRef, useState } from "https://esm.sh/react";
+import React, { StrictMode, useEffect, useLayoutEffect, useRef, useState, useMemo } from "https://esm.sh/react";
+import { motion, AnimatePresence } from "https://esm.sh/framer-motion";
 import { createRoot } from "https://esm.sh/react-dom/client";
 import { 
 	Send, 
@@ -27,7 +28,12 @@ import {
 	FileText,
 	Download,
 	MoreHorizontal,
-	CheckCircle
+	CheckCircle,
+    PhoneOff,
+    Moon,
+    SunMedium,
+    Book,
+    AlertCircle
 } from "https://esm.sh/lucide-react";
 import Markdown from "https://esm.sh/react-markdown";
 
@@ -40,6 +46,7 @@ createRoot(document.getElementById("root")).render(
 /* --- ASSETS --- */
 const SOUND_SENT = "dist/assets/sounds/sent.mp3";
 const SOUND_RECV = "dist/assets/sounds/received.mp3";
+const RING_URL = "dist/assets/sounds/call.mp3"; // Updated call sound
 const SOUND_NOTIFY = "dist/assets/sounds/notification.wav";
 const IMAGE_PLACEHOLDER = "dist/assets/blur.jpg";
 const AUDIO_MSG_SRC = "dist/assets/sounds/nico_audio.ogg"; 
@@ -49,6 +56,11 @@ const INJURY_IMG = "dist/assets/injury_blur.jpg"; // Placeholder for Node 1
 const LICENCIA_DOC = "dist/assets/licencia_medica.pdf"; // Placeholder for Node 6
 
 /* --- GAME DATA --- */
+const stickers = {
+    ok: "dist/assets/sticker_ok.webp", 
+    gg: "dist/assets/sticker_gg.webp"
+};
+
 const gameScript = [
 	{
 		id: 1,
@@ -188,7 +200,7 @@ const gameScript = [
 		id: 6,
 		time: "11:40",
 		text: "La secretaria dice que la empresa debe tramitar la licencia 5/6. Si no la reciben, ¿qué hago?",
-		media: { type: 'document', content: LICENCIA_DOC, fileName: 'Licencia_Medica_Nico.pdf', pages: '1 pág • PDF' },
+		media: { type: 'document', content: LICENCIA_DOC, fileName: 'Licencia_Medica_Nico.pdf', pages: '1 pág • PDF', thumbnail: IMAGE_PLACEHOLDER },
 		options: [
 			{ 
 				text: "La presentas directamente en el organismo administrador; si falta la DIAT, la hacemos.", 
@@ -372,8 +384,10 @@ const renderAvatar = (type) => {
 };
 
 /* Updated AudioBubble to match WhatsApp Style (Avatar inside) */
+/* Updated AudioBubble to match WhatsApp Style (Avatar inside) */
 function AudioBubble({ src, duration = "0:15", withAvatar = false, onPlay }) {
 	const [isPlaying, setIsPlaying] = useState(false);
+    const [played, setPlayed] = useState(false);
 	const audioRef = useRef(null);
 	const [progress, setProgress] = useState(0);
 
@@ -390,6 +404,7 @@ function AudioBubble({ src, duration = "0:15", withAvatar = false, onPlay }) {
 		const handleEnded = () => {
 			setIsPlaying(false);
 			setProgress(0);
+            setPlayed(true);
 		};
 
 		audio.addEventListener('timeupdate', updateProgress);
@@ -407,6 +422,7 @@ function AudioBubble({ src, duration = "0:15", withAvatar = false, onPlay }) {
 		if (isPlaying) {
 			audio.pause();
 		} else {
+            setPlayed(true);
 			audio.play();
 			if (onPlay) onPlay();
 		}
@@ -414,26 +430,46 @@ function AudioBubble({ src, duration = "0:15", withAvatar = false, onPlay }) {
 	};
 
 	return React.createElement("div", { className: "audio-bubble" },
-		React.createElement("audio", { ref: audioRef, src: src }),
-		withAvatar && React.createElement("div", { className: "audio-avatar-container" },
-			React.createElement("img", { src: "dist/assets/nico.jpg", className: "audio-internal-avatar" }),
-			React.createElement("div", { className: "audio-mic-badge" }, React.createElement(Mic, { size: 10, color: "white" }))
-		),
-		React.createElement("button", { className: "audio-play-btn", onClick: togglePlay },
-			isPlaying ? React.createElement(Pause, { size: 18, fill: "currentColor" }) : React.createElement(Play, { size: 18, fill: "currentColor" })
-		),
-		React.createElement("div", { className: "audio-track" },
-			React.createElement("div", { className: "audio-progress", style: { width: `${progress}%` } }),
-			React.createElement("div", { className: "audio-waveform" }, 
-				Array.from({length: 24}).map((_, i) => 
-					React.createElement("span", { key: i, style: { height: `${30 + Math.random() * 70}%` } }) 
-				)
-			)
-		),
-		React.createElement("div", { className: "audio-info" },
-			React.createElement("span", { className: "audio-duration" }, duration)
-		)
-	);
+    
+    // 1. El Audio tag invisible
+    React.createElement("audio", { ref: audioRef, src: src }),
+
+    // 2. El Avatar (opcional)
+    withAvatar && React.createElement("div", { className: "audio-avatar-container" },
+        React.createElement("img", { src: "dist/assets/nico.jpg", className: "audio-internal-avatar" }),
+        React.createElement("div", { className: "audio-mic-badge" }, 
+            React.createElement(Mic, { size: 15, color: played ? "#0073ffff" : "#4f4f4f" })
+        )
+    ),
+
+    // 3. El Botón de Play (Se queda a la izquierda)
+    React.createElement("button", { className: "audio-play-btn", onClick: togglePlay },
+        isPlaying 
+            ? React.createElement(Pause, { size: 18, fill: "currentColor" }) 
+            : React.createElement(Play, { size: 18, fill: "currentColor" })
+    ),
+
+    // 4. EL ARREGLO: Un wrapper para que el Track y la Info no se escapen
+    React.createElement("div", { className: "audio-content-wrapper" }, 
+        
+        // El Track (Ondas)
+        React.createElement("div", { className: "audio-track" },
+            React.createElement("div", { className: "audio-progress", style: { width: `${progress}%` } }),
+            React.createElement("div", { className: "audio-waveform" }, 
+                Array.from({length: 20}).map((_, i) => 
+                    React.createElement("span", { key: i, style: { height: `${30 + Math.random() * 70}%` } }) 
+                )
+            )
+        ),
+
+        // La Info (Duración)
+        React.createElement("div", { className: "audio-info" },
+            React.createElement("span", { className: "audio-duration" }, duration),
+            // Si quieres poner los tickets azules o algo así, va acá
+            React.createElement("span", { className: "audio-status" }) 
+        )
+    )
+);
 }
 
 function TypingBubble() {
@@ -461,6 +497,97 @@ function NotificationBanner({ message, show, onClick, title = "LA JEFA", icon = 
 	);
 }
 
+/* --- SST WIDGET HELPERS --- */
+
+const NOTIFY_URL = "https://cdn.pixabay.com/download/audio/2022/03/15/audio_2c4d36a3fc.mp3?filename=ui-notification-234729.mp3";
+
+function useAudio(url) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const a = new Audio(url);
+    a.preload = "auto";
+    ref.current = a;
+    return () => { a.pause(); ref.current = null; };
+  }, [url]);
+  return {
+    play: () => ref.current?.play?.(),
+    stop: () => { if (ref.current) { ref.current.pause(); ref.current.currentTime = 0; } },
+  };
+}
+
+function IncomingCallModal({ open, callerName = "La Jefa", subtitle = "Llamada entrante", avatar = "👩🏻‍💼", onAnswer, onDecline }) {
+  return React.createElement(AnimatePresence, null,
+    open && React.createElement(motion.div, {
+      className: "fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm",
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 }
+    },
+      React.createElement(motion.div, {
+        initial: { y: 40, scale: 0.96, opacity: 0 },
+        animate: { y: 0, scale: 1, opacity: 1 },
+        exit: { y: 20, scale: 0.98, opacity: 0 },
+        transition: { type: "spring", stiffness: 190, damping: 18 },
+        className: "mx-4 w-[92%] max-w-sm rounded-2xl bg-white p-6 text-slate-800 shadow-2xl dark:bg-slate-900 dark:text-slate-100"
+      },
+        React.createElement("div", { className: "flex flex-col items-center gap-3" },
+          React.createElement("div", { className: "text-6xl select-none" }, avatar),
+          React.createElement("div", { className: "text-lg text-slate-500 dark:text-slate-400" }, subtitle),
+          React.createElement("div", { className: "text-2xl font-semibold" }, callerName),
+          React.createElement("div", { className: "mt-4 grid w-full grid-cols-2 gap-3" },
+            React.createElement("button", {
+              onClick: onDecline,
+              className: "flex items-center justify-center gap-2 rounded-2xl bg-red-500 px-4 py-3 font-medium text-white shadow hover:bg-red-600 active:scale-[0.98]"
+            }, React.createElement(PhoneOff, { size: 20 }), " Rechazar"),
+            React.createElement("button", {
+              onClick: onAnswer,
+              className: "flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 font-semibold text-white shadow hover:bg-emerald-600 active:scale-[0.98]"
+            }, React.createElement(Phone, { size: 20 }), " Contestar")
+          )
+        )
+      )
+    )
+  );
+}
+
+
+
+function AyudaLeyPopover() {
+  const [open, setOpen] = useState(false);
+  return React.createElement("div", { className: "relative" },
+    React.createElement("button", {
+      "aria-label": "Ayuda Ley 16.744",
+      onClick: () => setOpen((v) => !v),
+      className: "flex items-center gap-2 rounded-xl border bg-white/80 px-3 py-2 text-sm shadow hover:bg-white dark:border-slate-600 dark:bg-slate-800"
+    }, React.createElement(Book, { size: 16 }), " Ayuda 16.744"),
+    React.createElement(AnimatePresence, null,
+      open && React.createElement(motion.div, {
+        initial: { opacity: 0, y: 8 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: 6 },
+        className: "absolute right-0 z-40 mt-2 w-80 rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-xl dark:border-slate-700 dark:bg-slate-900",
+		style: { width: '320px' }
+      },
+        React.createElement("div", { className: "mb-2 flex items-center gap-2 font-semibold" },
+          React.createElement(Info, { size: 16 }), " Mini‑manual"
+        ),
+        React.createElement("ul", { className: "space-y-2 text-[13px] leading-snug", style: { listStyle: 'none', padding: 0 } },
+          React.createElement("li", null, React.createElement("span", { className: "font-semibold" }, "DIAT/DIEP:"), " Denuncia en 24h desde que se conoce el accidente..."),
+          React.createElement("li", null, React.createElement("span", { className: "font-semibold" }, "Prestaciones médicas:"), " urgencia, hospitalización, diagnósticos..."),
+          React.createElement("li", null, React.createElement("span", { className: "font-semibold" }, "Trayecto:"), " cubre trayecto directo casa↔trabajo..."),
+          React.createElement("li", null, React.createElement("span", { className: "font-semibold" }, "Ingresos:"), " continuidad mediante subsidio/pensión.")
+        ),
+        React.createElement("div", { className: "mt-3 text-right" },
+          React.createElement("button", {
+            onClick: () => setOpen(false),
+            className: "rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-slate-700"
+          }, "Listo")
+        )
+      )
+    )
+  );
+}
+
 function WhatsAppSimulator() {
     const [view, setView] = useState("list"); 
 	const [activeChat, setActiveChat] = useState("nico");
@@ -472,6 +599,11 @@ function WhatsAppSimulator() {
 	const [loading, setLoading] = useState(true);
 	const [introPlayed, setIntroPlayed] = useState(false);
 
+	const [callOpen, setCallOpen] = useState(false);
+    const [nicoStarted, setNicoStarted] = useState(false); // Start Flow flag
+	const ring = useAudio(RING_URL);
+	const notify = useAudio(NOTIFY_URL);
+
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setLoading(false);
@@ -479,19 +611,72 @@ function WhatsAppSimulator() {
 		return () => clearTimeout(timer);
 	}, []);
 
+    // Start Flow: Trigger Nico's audio after 3s in Boss Chat
+    useEffect(() => {
+        if (!nicoStarted && activeChat === 'jefe') {
+            setNicoStarted(true);
+            setTimeout(() => {
+                receiveNicoAudio();
+            }, 3000);
+        }
+    }, [activeChat, nicoStarted]);
+
+    const receiveNicoAudio = () => {
+        playAudio(SOUND_NOTIFY);
+        triggerVibration();
+        const audioMsg = { id: "audio-1", type: "audio", content: AUDIO_MSG_SRC, timestamp: "08:10", duration: "0:12" };
+        addMessage("nico", audioMsg);
+        setNotification({ show: true, message: "🎤 Audio (0:12)", title: "Nico compita IST", icon: "👷" });
+        setTimeout(() => setNotification(s => ({...s, show: false})), 4000);
+    };
+
+	const openCall = () => {
+		setCallOpen(true);
+		ring.play();
+	};
+
+	const handleAnswer = () => {
+		setCallOpen(false);
+		ring.stop();
+		addMessage("jefe", {
+			id: Date.now().toString(), // No crypto.randomUUID yet just to be safe in all envs
+			type: "ai",
+			content: "No puedo hablar más, pero confío en que estén gestionando la DIAT y derivando al organismo administrador. Avísenme el cualquier cosa.",
+			timestamp: "Ahora"
+		});
+		setGameState(prev => ({ ...prev, score: prev.score + 1 }));
+        navigateToChat("jefe"); // Explicitly go to boss chat on answer
+	};
+
+	const handleDecline = () => {
+		setCallOpen(false);
+		ring.stop();
+		addMessage("jefe", {
+			id: Date.now().toString(),
+			type: "system",
+			content: "🚫 Llamada perdida de la Jefa. Recuerda gestionar la DIAT y documentar el accidente.",
+			timestamp: "Ahora"
+		});
+        // Do NOT navigate. Stay on current screen.
+	};
+
+	const triggerTiaNotification = (msg = "¿Qué le pasó a mi niño? ¿Es grave?") => {
+		setNotification({ show: true, message: msg, title: "Tía del Nico", icon: "👵" });
+		notify.play();
+		setTimeout(() => setNotification(s => ({ ...s, show: false })), 5000);
+	};
+
 	// Persistent Chat History
 	const initialHistory = {
-		nico: [
-			{ id: "audio-1", type: "audio", content: AUDIO_MSG_SRC, timestamp: "08:10", duration: "0:12" }
-		],
+		nico: [], // Initially empty
 		jefe: [{ id: "init-j", type: "ai", content: "Habla con el Nico y recuerda enviar el informe de incidentes.", timestamp: "Ayer" }],
 		eval: [] 
 	};
 	const [chatHistory, setChatHistory] = useState(initialHistory);
 	
 	const initialChatList = [
-		{ id: "nico", name: "Nico (Compa)", lastMsg: "🎤 Audio (0:12)", time: "08:12", avatar: "nico" }, 
-		{ id: "jefe", name: "Jefatura", lastMsg: "Habla con el Nico y recuerda enviar el...", time: "Ayer", avatar: "jefe" }
+		// Nico missing initially
+		{ id: "jefe", name: "Jefatura", lastMsg: "Habla con el Nico y recuerda enviar el...", time: "Ayer", avatar: "jefe", unread: 1 }
 	];
 	const [chatList, setChatList] = useState(initialChatList);
 
@@ -526,6 +711,8 @@ function WhatsAppSimulator() {
     const handleChatSelect = (chatId) => {
 		setActiveChat(chatId);
 		setView("chat");
+        // Clear unread count
+        setChatList(prev => prev.map(c => c.id === chatId ? { ...c, unread: 0 } : c));
 	};
 
 	const handleBack = () => {
@@ -534,8 +721,12 @@ function WhatsAppSimulator() {
 
 	const handleNotificationClick = () => {
 		setNotification({ show: false, message: "" });
-		setActiveChat(notification.title === "Evaluación" ? "eval" : "jefe");
+        if (notification.title === "Tía del Nico") return; // Just close for Tía
+		setActiveChat(notification.title === "Evaluación" ? "eval" : (notification.title === "Nico compita IST" ? "nico" : "jefe"));
 		setView("chat");
+        // Clear unread count for the chat we just opened via notification
+        const targetId = notification.title === "Evaluación" ? "eval" : (notification.title === "Nico compita IST" ? "nico" : "jefe");
+        setChatList(prev => prev.map(c => c.id === targetId ? { ...c, unread: 0 } : c));
 	};
 
 	const addMessage = (chatId, msg) => {
@@ -546,24 +737,41 @@ function WhatsAppSimulator() {
 		// Update Chat List Preview
 		setChatList(prev => {
 			const existing = prev.find(c => c.id === chatId);
+            
+            // Check if we are currently inside this chat
+            const isInsideChat = (activeChat === chatId && view === 'chat');
+            // If user message, never mark as unread (optional, but logical)
+            const shouldIncrement = !isInsideChat && msg.type !== 'user' && msg.type !== 'system';
+
 			if (existing) {
 				return prev.map(chat => {
 					if (chat.id === chatId) {
 						let preview = msg.content;
 						if (msg.type === "image") preview = "📷 Foto";
-						if (msg.type === "audio") preview = "🎤 Audio";
+						if (msg.type === "audio") preview = `🎤 ${msg.duration || "Audio"}`;
 						if (msg.type === "sticker") preview = "💟 Sticker";
-						return { ...chat, lastMsg: preview, time: msg.timestamp === "React" ? "Ahora" : msg.timestamp };
+						return { 
+                            ...chat, 
+                            lastMsg: preview, 
+                            time: msg.timestamp === "React" ? "Ahora" : msg.timestamp,
+                            unread: (isInsideChat ? 0 : (chat.unread || 0) + (shouldIncrement ? 1 : 0))
+                        };
 					}
 					return chat;
 				});
 			} else {
+                let preview = msg.content;
+                if (msg.type === "image") preview = "📷 Foto";
+                if (msg.type === "audio") preview = `🎤 ${msg.duration || "Audio"}`;
+                if (msg.type === "sticker") preview = "💟 Sticker";
+
 				const newChat = {
 					id: chatId,
-					name: chatId === 'eval' ? "Evaluación" : "Chat",
-					lastMsg: msg.content,
+					name: chatId === 'nico' ? "Nico compita IST" : (chatId === 'eval' ? "Evaluación" : "Chat"),
+					lastMsg: preview,
 					time: "Ahora",
-					avatar: chatId === 'eval' ? "eval" : "default"
+					avatar: chatId === 'eval' ? "eval" : (chatId === 'nico' ? 'nico' : "default"),
+                    unread: (isInsideChat ? 0 : 1) // Only mark unread if not inside
 				};
 				return [newChat, ...prev]; 
 			}
@@ -573,6 +781,7 @@ function WhatsAppSimulator() {
 	const resetGame = () => {
 		setGameState({ step: 0, score: 0, isFinished: false, isTerminated: false });
 		setIntroPlayed(false);
+        setNicoStarted(false);
 		setChatHistory(initialHistory);
 		setChatList(initialChatList);
 		setLoading(true); 
@@ -592,6 +801,12 @@ function WhatsAppSimulator() {
 
 	const handleGameChoice = (option) => {
 		if (gameState.isFinished) return;
+        
+        // User acted! Cancel the inactivity call
+        if (callTimerRef.current) {
+            clearTimeout(callTimerRef.current);
+            callTimerRef.current = null;
+        }
 
 		// 1. User Choice (SEND)
 		playAudio(SOUND_SENT);
@@ -692,6 +907,29 @@ function WhatsAppSimulator() {
 
 				if (earnedScore === 2) {
 					triggerConfetti();
+					// Auto Sticker for correct answer
+					setTimeout(() => {
+						playAudio(SOUND_RECV);
+						addMessage("nico", {
+							id: (Date.now() + 8).toString(),
+							type: "sticker",
+							content: stickers.ok,
+							timestamp: "Ahora"
+						});
+					}, 300);
+				} else if (earnedScore === 0) {
+					// Auto Sticker for wrong answer
+					setTimeout(() => {
+						playAudio(SOUND_RECV);
+						addMessage("nico", {
+							id: (Date.now() + 8).toString(),
+							type: "sticker",
+							content: stickers.gg,
+							timestamp: "Ahora"
+						});
+						// Auto Tia Notification
+						triggerTiaNotification("Mijito, me dijeron que el Nico se equivocó ¿ya lo vieron?");
+					}, 300);
 				}
 								// 5. Next Step Check
 				const nextStepIndex = gameState.step + 1;
@@ -779,10 +1017,13 @@ function WhatsAppSimulator() {
 		}, 1500);
 	};
 
+    const callTimerRef = useRef(null); // Ref to store call timer
+
 	const handleIntroPlay = () => {
 		if (introPlayed) return;
 		setIntroPlayed(true);
-
+        // Removed immediate timer from here. Call triggers after OPTIONS appear (12s later + 18s).
+ 
 		// 5s -> Image
 		setTimeout(() => {
 			playAudio(SOUND_RECV);
@@ -796,7 +1037,7 @@ function WhatsAppSimulator() {
 			addMessage("nico", imgMsg);
 		}, 5000);
 
-		// 12s -> Text
+		// 12s -> Text (AND Start Inactivity Timer)
 		setTimeout(() => {
 			playAudio(SOUND_RECV);
 			triggerVibration();
@@ -804,9 +1045,15 @@ function WhatsAppSimulator() {
 				id: "init-1", 
 				type: "ai", 
 				content: gameScript[0].text, 
-				timestamp: gameScript[0].time 
+				timestamp: "08:12" // Fixed timestamp to match script
 			};
 			addMessage("nico", textMsg);
+
+            // Start Inactivity Timer for Call (18s AFTER options appear)
+            // Options appear effectively when this message arrives.
+            if (callTimerRef.current) clearTimeout(callTimerRef.current);
+            callTimerRef.current = setTimeout(() => openCall(), 10000);
+
 		}, 12000);
 	};
 
@@ -816,6 +1063,46 @@ function WhatsAppSimulator() {
 	};
 
     return React.createElement("main", { className: "phone-wrapper" },
+		// Helper Components inside the main wrapper (Overlay)
+		React.createElement(IncomingCallModal, {
+			open: callOpen,
+			callerName: "La Jefa",
+			subtitle: "Llamada entrante",
+            avatar: "👩‍💼",
+			onAnswer: handleAnswer,
+			onDecline: handleDecline
+		}),
+		// TopToast removed, using NotificationBanner unified system
+		// Dev Controls & Help (Fixed Overlay)
+		React.createElement("div", { 
+			style: { 
+				position: 'fixed', 
+				bottom: '20px', 
+				right: '20px', 
+				zIndex: 900, 
+				display: 'flex', 
+				gap: '10px',
+				alignItems: 'center',
+				background: 'rgba(255,255,255,0.9)',
+				padding: '12px',
+				borderRadius: '16px',
+				boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+				backdropFilter: 'blur(8px)',
+				border: '1px solid rgba(0,0,0,0.05)'
+			} 
+		},
+			React.createElement("div", { style: { fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginRight: '4px' } }, "🎮 SST:"),
+			React.createElement("button", { 
+				onClick: openCall,
+				style: { padding: '8px 16px', background: '#10b981', color: 'white', border:'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize:'13px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }
+			}, "📞 Llamar"),
+			React.createElement("button", { 
+				onClick: () => triggerTiaNotification(),
+				style: { padding: '8px 16px', background: '#6366f1', color: 'white', border:'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize:'13px', boxShadow: '0 2px 4px rgba(99, 102, 241, 0.2)' }
+			}, "👵 Tía"),
+			React.createElement(AyudaLeyPopover)
+		),
+
         React.createElement("div", { className: `phone-frame ${isVibrating ? 'vibrate' : ''}` },
 			React.createElement(SplashScreen, { isLoading: loading }),
 			React.createElement(NotificationBanner, { 
@@ -900,7 +1187,8 @@ function ChatList({ onSelect, chats }) {
                             React.createElement("span", { className: "wa-chat-time" }, chat.time)
                         ),
                         React.createElement("div", { className: "wa-chat-row-2" },
-                            React.createElement("span", { className: "wa-chat-preview" }, chat.lastMsg)
+                            React.createElement("span", { className: "wa-chat-preview" }, chat.lastMsg),
+                            chat.unread > 0 && React.createElement("div", { className: "wa-unread-badge" }, chat.unread)
                         )
                     )
                 )
@@ -979,6 +1267,20 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 
 	const renderMessageContent = (msg) => {
 		if (msg.type === 'document') {
+            if (msg.thumbnail) {
+                 return React.createElement("div", { className: "wa-document-bubble", style: { padding: 0, display: 'flex', flexDirection: 'column' } },
+                    React.createElement("div", { style: { height: '140px', background: '#e0e0e0', position: 'relative', overflow: 'hidden', borderTopLeftRadius: '7.5px', borderTopRightRadius: '7.5px' } },
+                        React.createElement("img", { src: msg.thumbnail, style: { width: '100%', height: '100%', objectFit: 'cover' } }),
+                        React.createElement("div", { style: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(0,0,0,0.2)', borderRadius: '50%', padding: '12px' } },
+                             React.createElement(FileText, { size: 24, color: "white" })
+                        )
+                    ),
+                    React.createElement("div", { className: "wa-doc-info", style: { background: 'rgba(0,0,0,0.05)', padding: '10px 12px', borderBottomLeftRadius: '7.5px', borderBottomRightRadius: '7.5px' } },
+                         React.createElement("span", { className: "wa-doc-name", style: { fontSize: '13.5px', fontWeight: '500', display: 'block' } }, msg.fileName || "Doc"),
+                         React.createElement("span", { className: "wa-doc-meta" }, msg.pages || "PDF")
+                    )
+                 );
+            }
 			return React.createElement("div", { className: "wa-document-bubble" },
 				React.createElement("div", { className: "wa-doc-icon" }, 
 					React.createElement(FileText, { size: 20, color: "white" })
@@ -996,7 +1298,8 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 		if (msg.type === 'sticker') return React.createElement("img", { src: msg.content, className: "wa-sticker", alt: "Sticker" });
 		if (msg.type === 'audio') return React.createElement(AudioBubble, { 
 			src: msg.content, 
-			duration: msg.duration, 
+			duration: msg.duration,
+            withAvatar: true,
 			onPlay: (chatId === 'nico' && msg.id === 'audio-1') ? onIntroPlay : undefined 
 		});
 		if (msg.type === 'contact_link') {
