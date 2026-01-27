@@ -846,11 +846,32 @@ function WhatsAppSimulator() {
 	const handleNotificationClick = () => {
 		setNotification({ show: false, message: "" });
         if (notification.title === "Tía del Nico") return; // Just close for Tía
-		setActiveChat(notification.title === "Evaluación" ? "eval" : (notification.title === "Nico compita IST" ? "nico" : "jefe"));
-		setView("chat");
-        // Clear unread count for the chat we just opened via notification
-        const targetId = notification.title === "Evaluación" ? "eval" : (notification.title === "Nico compita IST" ? "nico" : "jefe");
-        setChatList(prev => prev.map(c => c.id === targetId ? { ...c, unread: 0 } : c));
+		
+		const targetId = notification.title === "Evaluación" ? "eval" : (notification.title === "Nico compita IST" ? "nico" : "jefe");
+		
+		// Ensure chat exists in list and clear unread count
+		setChatList(prev => {
+			const exists = prev.find(c => c.id === targetId);
+			if (!exists && targetId === "nico") {
+				// Add nico chat if it doesn't exist
+				return [{ 
+					id: "nico", 
+					name: "Nico compita IST", 
+					lastMsg: "👷 Nico",
+					time: "Ahora",
+					avatar: "nico",
+					unread: 0 
+				}, ...prev];
+			}
+			// Clear unread count for the target chat
+			return prev.map(c => c.id === targetId ? { ...c, unread: 0 } : c);
+		});
+		
+		// Update active chat and view
+		setTimeout(() => {
+			setActiveChat(targetId);
+			setView("chat");
+		}, 0);  // Microtask to ensure chatList is updated first
 	};
 
 	const addMessage = (chatId, msg) => {
