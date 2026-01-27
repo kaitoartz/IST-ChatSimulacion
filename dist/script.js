@@ -1,5 +1,5 @@
 
-import React, { StrictMode, useEffect, useLayoutEffect, useRef, useState, useMemo } from "https://esm.sh/react";
+import React, { StrictMode, useEffect, useLayoutEffect, useRef, useState, useMemo, useReducer } from "https://esm.sh/react";
 import { motion, AnimatePresence } from "https://esm.sh/framer-motion";
 import { createRoot } from "https://esm.sh/react-dom/client";
 import { 
@@ -43,6 +43,64 @@ createRoot(document.getElementById("root")).render(
     )
 );
 
+/* --- AUDIO CONTEXT --- */
+let audioContext = null;
+let audioUnlocked = false;
+
+const getAudioContext = () => {
+	if (!audioContext) {
+		const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+		audioContext = new AudioContextClass();
+	}
+	return audioContext;
+};
+
+const unlockAudio = async () => {
+	if (audioUnlocked) return;
+	try {
+		const ctx = getAudioContext();
+		if (ctx.state === 'suspended') {
+			await ctx.resume();
+		}
+		// Play silent sound to unlock browser autoplay
+		const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+		const source = ctx.createBufferSource();
+		source.buffer = buf;
+		source.connect(ctx.destination);
+		source.start(0);
+		audioUnlocked = true;
+		console.log("Audio unlocked");
+	} catch (e) {
+		console.warn("Audio unlock failed:", e);
+	}
+};
+
+const playAudio = (path, options = {}) => {
+	const { volume = 0.5, fallbackSilent = true } = options;
+	try {
+		const audio = new Audio(path);
+		audio.volume = volume;
+		const playPromise = audio.play();
+		
+		if (playPromise !== undefined) {
+			playPromise
+				.catch(e => {
+					if (fallbackSilent) {
+						console.warn("Audio play failed, continuing silently:", path, e);
+					} else {
+						console.error("Audio play error:", path, e);
+					}
+				});
+		}
+	} catch (e) {
+		if (!fallbackSilent) {
+			console.error("Audio error", e);
+		} else {
+			console.warn("Audio error (silent fallback):", e);
+		}
+	}
+};
+
 /* --- ASSETS --- */
 const SOUND_SENT = "dist/assets/sounds/sent.mp3";
 const SOUND_RECV = "dist/assets/sounds/received.mp3";
@@ -55,252 +113,80 @@ const DOC_ICON_PATH = "dist/assets/doc_icon.png"; // Placeholder
 const HAND_IMG = "dist/assets/hand.jpg"; // Placeholder for Node 1
 const LICENCIA_DOC = "dist/assets/licencia_medica.pdf"; // Placeholder for Node 6
 
+const assetsToPreload = [
+	SOUND_SENT, SOUND_RECV, RING_URL, SOUND_NOTIFY, AUDIO_MSG_SRC,
+	HAND_IMG, "dist/assets/logo.png", "dist/assets/nico.jpg"
+];
+
+const preloadAssets = async () => {
+	const ctx = getAudioContext();
+	const promises = assetsToPreload.map(url => {
+		if (url.endsWith('.mp3') || url.endsWith('.wav') || url.endsWith('.ogg')) {
+			return fetch(url).then(r => r.arrayBuffer()).then(buf => {
+				try {
+					ctx.decodeAudioData(buf);
+				} catch (e) {
+					console.warn("Audio decode warning:", url, e);
+				}
+			}).catch(e => console.warn("Preload error:", url, e));
+		} else {
+			return fetch(url).catch(e => console.warn("Preload error:", url, e));
+		}
+	});
+	await Promise.all(promises);
+};
+
 /* --- GAME DATA --- */
 const stickers = {
     ok: "dist/assets/sticker-ok.webp", 
     gg: "dist/assets/sticker-gg.webp"
 };
 
-const gameScript = [
-	{
-		id: 1,
-		time: "08:12",
-		text: "Te cuento po, me corté la mano con una lámina en el taller. ¿Qué hago? 😰",
-		media: { type: 'image', content: HAND_IMG }, // Added Injury Image
-		options: [
-			{ 
-				text: "Avísale de inmediato a tu jefatura para que emita la DIAT y te acompaño al centro de la mutual/ISL.", 
-				score: 2, 
-				reaction: "¡Gracias, no sabía eso! Voy a buscar ayuda altiro.",
-				bossMessage: "✅ Bien hecho activando el protocolo DIAT, así evitamos multas y Nico recibe atención inmediata.",
-				feedback: "✅ +2 pts. Activaste el proceso de denuncia y atención por el seguro laboral." 
-			},
-			{ 
-				text: "Dejate la venda nomás y veamos si se te pasa.", 
-				score: 0, 
-				reaction: "¿Seguro? Es que sangra caleta…",
-				bossMessage: "❌ ¡Ojo! Ignorar un accidente grave puede traer sanciones y agravar la lesión.",
-				feedback: "❌ 0 pts. Minimizas el accidente y retrasas cobertura." 
-			},
-			{ 
-				text: "Anda a tu ISAPRE/FONASA, después vemos lo de la DIAT.", 
-				score: 1, 
-				reaction: "¿Y no tengo que hacer algo más?",
-				bossMessage: "⚠️ Ojo, si va a Isapre perdemos la trazabilidad laboral. Mejor directo a Mutual.",
-				feedback: "🟡 +1 pt. Urgencia puede atender, pero sin DIAT no hay cobertura completa." 
-			}
-		]
-	},
-	{
-		id: 2,
-		time: "08:15",
-		text: "Mi jefa hoy no está. ¿Sin ella no se puede denunciar?",
-		options: [
-			{ 
-				text: "Solo la empresa puede.", 
-				score: 0, 
-				reaction: "Pucha… entonces espero.",
-				bossMessage: "❌ ¡Error! Cualquier testigo o el mismo accidentado puede denunciar, no esperen por mí.",
-				feedback: "❌ 0 pts. La ley permite que otras personas denuncien también." 
-			},
-			{ 
-				text: "Tú puedes hacer la DIAT y yo te ayudo; igual avisamos a la empresa.", 
-				score: 2, 
-				reaction: "¡Ya! Gracias por apoyarme.",
-				bossMessage: "✅ Excelente iniciativa. La autodenuncia asegura la atención oportuna.",
-				feedback: "✅ +2 pts. Empoderas al trabajador y das continuidad al proceso." 
-			},
-			{ 
-				text: "Esperemos a mañana.", 
-				score: 0, 
-				reaction: "¿Y si se me infecta?",
-				bossMessage: "❌ ¡Jamás postergar! La denuncia debe ser dentro de las 24 horas ideales.",
-				feedback: "❌ 0 pts. Posponer es riesgoso y puede afectar cobertura." 
-			}
-		]
-	},
-	{
-		id: 3,
-		time: "08:22",
-		text: "Me duele harto. ¿Voy en micro o pido ambulancia?",
-		options: [
-			{ 
-				text: "Si hay sangrado importante o mareo, pide traslado; si no, te llevo directo a la mutual/ISL.", 
-				score: 2, 
-				reaction: "¡Perfecto! Mejor no me la juego.",
-				bossMessage: "✅ Muy bien priorizando el traslado seguro. Es parte de la cobertura.",
-				feedback: "✅ +2 pts. El traslado forma parte de las prestaciones médicas." 
-			},
-			{ 
-				text: "Pasa por tu casa a cambiarte y después vamos.", 
-				score: 0, 
-				reaction: "¿No será perder tiempo…?",
-				bossMessage: "❌ No pierdan tiempo valioso. La ropa da igual, la salud es primero.",
-				feedback: "❌ 0 pts. Desvías la urgencia y dilatas la atención." 
-			},
-			{ 
-				text: "Anda a la clínica más cercana porque es más rápida.", 
-				score: 1, 
-				reaction: "No sabía que podía…",
-				bossMessage: "⚠️ Sirve por Ley de Urgencia, pero idealmente va directo al convenio para no pagar extra.",
-				feedback: "🟡 +1 pt. Es válido en urgencia, pero debe derivarse y calificar." 
-			}
-		]
-	},
-	{
-		id: 4,
-		time: "10:05",
-		text: "Me suturaron y me dieron indicaciones. ¿Esto lo pago yo? 💸",
-		options: [
-			{ 
-				text: "Están cubiertos procedimientos, medicamentos, curaciones y controles hasta tu alta.", 
-				score: 2, 
-				reaction: "¡Menos mal! Pensé que iba a salir caro.",
-				bossMessage: "✅ Correcto, el seguro cubre el 100% de las prestaciones médicas.",
-				feedback: "✅ +2 pts. Cubre todo hasta recuperación o secuelas." 
-			},
-			{ 
-				text: "Solo la consulta; los medicamentos corren por tu cuenta.", 
-				score: 0, 
-				reaction: "Uff, me dejaron medio quebrado.",
-				bossMessage: "❌ ¡No! Nico no debe pagar nada. Infórmate bien sobre la Ley 16.744.",
-				feedback: "❌ 0 pts. ¡No! Nico no debe pagar nada. Infórmate bien sobre la Ley 16.744." 
-			},
-			{ 
-				text: "Solo si faltas al trabajo te cubren.", 
-				score: 0, 
-				reaction: "¿Entonces no era accidente laboral?",
-				bossMessage: "❌ Falso. La cobertura aplica con o sin licencia médica.",
-				feedback: "❌ 0 pts. Falso. La cobertura aplica con o sin licencia médica." 
-			}
-		]
-	},
-	{
-		id: 5,
-		time: "10:15",
-		text: "El doc dice que quizá no necesito reposo. ¿Pierdo beneficios?",
-		options: [
-			{ 
-				text: "Aunque no tengas reposo, igual tienes prestaciones médicas.", 
-				score: 2, 
-				reaction: "¡Ah buena! Pensé que perdía todo.",
-				bossMessage: "✅ Exacto. Nico vuelve a trabajar pero sigue con tratamiento cubierto.",
-				feedback: "✅ +2 pts. La cobertura médica se mantiene aunque no haya reposo." 
-			},
-			{ 
-				text: "Sin licencia, pagas todo tú.", 
-				score: 0, 
-				reaction: "Pucha, no tenía idea…",
-				bossMessage: "❌ Error grave. No asustes a Nico, el seguro sigue operando.",
-				feedback: "❌ 0 pts. Error grave. No asustes a Nico, el seguro sigue operando." 
-			}
-		]
-	},
-	{
-		id: 6,
-		time: "11:40",
-		text: "La secretaria dice que la empresa debe tramitar la licencia 5/6. Si no la reciben, ¿qué hago?",
-		media: { type: 'document', content: LICENCIA_DOC, fileName: 'Licencia_Medica_Nico.pdf', pages: '1 pág • PDF', thumbnail: IMAGE_PLACEHOLDER },
-		options: [
-			{ 
-				text: "La presentas directamente en el organismo administrador; si falta la DIAT, la hacemos.", 
-				score: 2, 
-				reaction: "¡Buena! No sabía que podía hacerlo directo.",
-				bossMessage: "✅ Bien resuelto. Si RRHH falla, el trabajador puede gestionar su licencia directo.",
-				feedback: "✅ +2 pts. Bien resuelto. Si RRHH falla, el trabajador puede gestionar su licencia directo." 
-			},
-			{ 
-				text: "Llévala a la ISAPRE.", 
-				score: 0, 
-				reaction: "Pero si es laboral…",
-				bossMessage: "❌ Si la llevas a Isapre la van a rechazar por origen laboral. Pérdida de tiempo.",
-				feedback: "❌ 0 pts. Si la llevas a Isapre la van a rechazar por origen laboral. Pérdida de tiempo." 
-			},
-			{ 
-				text: "Espera a que la empresa vuelva.", 
-				score: 0, 
-				reaction: "¿Y si se pasa el plazo?",
-				bossMessage: "❌ Los plazos de licencia son fatales. No hay que esperar.",
-				feedback: "❌ 0 pts. Los plazos de licencia son fatales. No hay que esperar." 
-			}
-		]
-	},
-	{
-		id: 7,
-		time: "Martes, 08:55",
-		text: "Voy camino a control. ¿Sirve que guarde fotos y el parte con las circunstancias?",
-		options: [
-			{ 
-				text: "Sí, guarda fotos, testigos y documentos; te ayudan a acreditar circunstancias y trayecto si aplica.", 
-				score: 2, 
-				reaction: "¡Perfecto! Tomé fotos de todo.",
-				sticker: STICKER_THUMB,
-				media: { type: 'image', content: IMAGE_PLACEHOLDER }, 
-				bossMessage: "✅ Super bien. Esos respaldos son claves si la mutual cuestiona el origen.",
-				feedback: "✅ +2 pts. Super bien. Esos respaldos son claves si la mutual cuestiona el origen." 
-			},
-			{ 
-				text: "No hace falta, con la DIAT basta.", 
-				score: 0, 
-				reaction: "Chuta, ya las borré…",
-				bossMessage: "❌ Mal consejo. Sin pruebas es más difícil defender el caso si lo rechazan.",
-				feedback: "❌ 0 pts. Mal consejo. Sin pruebas es más difícil defender el caso si lo rechazan." 
-			}
-		]
-	},
-	{
-    id: 8,
-    time: "12:00",
-    text: "Oye wn, estuve leyendo el manual que me pasaron y caché unos datos que en volá tú no sabíai. ¿Te pongo a prueba? 😎",
-    options: [
-        { text: "¡Dale! Tira los datos a ver si sabís tanto. Jajaja", score: 0, reaction: "Ya, prepárate que aquí te pillo fijo. ¡Vamos!" }
-    ]
-},
-	{
-    id: 9,
-    time: "12:01",
-    text: "1️⃣ ¿Sabíai que si vai de la pega a la casa y te desviai a comprar pan, te sigue cubriendo el seguro de trayecto?",
-    options: [
-        { 
-            text: "¡Ooh que buen dato wn! No tenía idea. 👍", 
-            score: 0, 
-            style: 'truth',
-            reaction: "❌ ¡Puta el weón! Te cuentié pesao' JKSADKA. El trayecto tiene que ser directo, si te desviai a comprar pan cagaste con el seguro.", 
-            feedback: "❌ 0 pts. El desvío por motivos personales interrumpe la cobertura de trayecto."
-        },
-        { 
-            text: "Chamullento ql, aonde la viste. Esa es mula. 👎", 
-            score: 2, 
-            style: 'myth',
-            reaction: "✅ ¡Buena! Estái vivo. Es chamullo: si hay un desvío que no sea por fuerza mayor, el seguro no te pesca.",
-            feedback: "✅ +2 pts. El trayecto debe ser directo y no interrumpido por fines personales."
-        }
-    ]
-},
-{
-    id: 10,
-    time: "12:02",
-    text: "2️⃣ ¿Y esta? En la Mutual tengo que pagar la atención de urgencia y después pedir el reembolso con la boleta.",
-    options: [
-        { 
-            text: "Claro, como en la farmacia. Verdad. 👍", 
-            score: 0, 
-            style: 'truth',
-            reaction: "❌ ¡Te volví a pillar! JSDKFJS. El seguro es gratuito, no tení que sacar ni una gamba del bolsillo.", 
-            feedback: "❌ 0 pts. La Ley 16.744 no contempla copagos ni reembolsos; es gratuita."
-        },
-        { 
-            text: "¡La mansa mentira hno! No se paga ni un peso. 👎", 
-            score: 2, 
-            style: 'myth',
-            reaction: "✅ ¡Eso! La tení clarita. Todo el tratamiento, hasta los remedios, son gratis.",
-            feedback: "✅ +2 pts. Cobertura total sin costo para el trabajador."
-        }
-    ]
-}
-];
+let gameScript = [];
+const gameScriptPromise = fetch("dist/data/gameScript-es.json")
+    .then(res => res.json())
+    .then(data => {
+        gameScript = data || [];
+        return gameScript;
+    })
+    .catch(err => {
+        console.error("No se pudo cargar gameScript", err);
+        return [];
+    });
+
+const getGameScript = async () => {
+    if (gameScript.length) return gameScript;
+    return gameScriptPromise;
+};
 
 const PASSING_SCORE = 14; 
+
+const initialGameState = { step: 0, score: 0, status: "idle", isFinished: false, isTerminated: false };
+
+const gameReducer = (state, action) => {
+	switch (action.type) {
+		case "RESET":
+			return { ...initialGameState, status: action.status || initialGameState.status };
+		case "ADD_SCORE":
+			return { ...state, score: state.score + (action.value || 0) };
+		case "SET_SCORE":
+			return { ...state, score: action.value ?? state.score };
+		case "ADVANCE_STEP":
+			return { ...state, step: state.step + 1 };
+		case "SET_STEP":
+			return { ...state, step: action.value ?? state.step };
+		case "SET_STATUS": {
+			const status = action.value || state.status;
+			return { ...state, status, isFinished: status === "finished", isTerminated: status === "terminated" };
+		}
+		case "FINISH":
+			return { ...state, status: "finished", isFinished: true };
+		case "TERMINATE":
+			return { ...state, status: "terminated", isTerminated: true };
+		default:
+			return state;
+	}
+};
 
 const getEvaluationMessage = (score) => {
 	const TOTAL_SCORE = 18; // 14 base + 4 bonus
@@ -320,6 +206,24 @@ const getEvaluationMessage = (score) => {
 	return msg;
 };
 
+/* --- PERFORMANCE HOOKS --- */
+function useIsVisible(ref, options = { threshold: 0.1 }) {
+	const [isVisible, setIsVisible] = useState(false);
+
+	useEffect(() => {
+		if (!ref.current) return;
+
+		const observer = new IntersectionObserver(([entry]) => {
+			setIsVisible(entry.isIntersecting);
+		}, options);
+
+		observer.observe(ref.current);
+		return () => observer.disconnect();
+	}, [options]);
+
+	return isVisible;
+}
+
 const ChatText = {
 	p({ node, ...rest }) {
 		return React.createElement("p", Object.assign({ className: "msg-text" }, rest));
@@ -331,7 +235,7 @@ const ChatText = {
 
 /* --- COMPONENTS --- */
 
-function SplashScreen({ isLoading }) {
+function SplashScreen({ isLoading, preloadProgress = 0 }) {
 	const [fadeOut, setFadeOut] = useState(false);
 
 	useEffect(() => {
@@ -342,11 +246,16 @@ function SplashScreen({ isLoading }) {
 
 	if (!isLoading && !fadeOut) return null;
 
+	const progressPercent = Math.min((preloadProgress / assetsToPreload.length) * 100, 100);
+
 	return React.createElement("div", { className: `splash-screen ${isLoading ? '' : 'hidden'}` },
 		React.createElement("div", { className: "splash-content" },
 			React.createElement("img", { src: "dist/assets/logo.png", className: "splash-logo", alt: "IST Educa" }),
 			React.createElement(Loader2, { className: "splash-spinner", size: 48 }),
-			React.createElement("p", { className: "splash-text" }, "Abriendo ISTeduca APP...")
+			React.createElement("p", { className: "splash-text" }, "Abriendo ISTeduca APP..."),
+			React.createElement("div", { style: { width: '200px', height: '4px', background: '#e0e0e0', borderRadius: '2px', marginTop: '20px', overflow: 'hidden' } },
+				React.createElement("div", { style: { width: `${progressPercent}%`, height: '100%', background: '#00bcd4', transition: 'width 0.3s' } })
+			)
 		)
 	);
 }
@@ -482,6 +391,166 @@ function TypingBubble() {
 	);
 }
 
+function ConfettiLayer({ confetti }) {
+	const ref = useRef(null);
+	const isVisible = useIsVisible(ref);
+
+	if (!isVisible) return null;
+
+	return React.createElement("div", { ref: ref, style: { position: 'absolute', inset: 0, pointerEvents: 'none' } },
+		confetti.map(c => 
+			React.createElement("div", { 
+				key: c.id, 
+				className: "floating-emoji", 
+				style: { left: `${c.x}%` } 
+			}, c.emoji)
+		)
+	);
+}
+
+function MessageBubble({ msg, chatId, renderContent, onNavigateHelp }) {
+	const ref = useRef(null);
+	const isVisible = useIsVisible(ref, { threshold: 0.05 });
+
+	return React.createElement("div", { 
+		ref: ref,
+		id: msg.sectionId || msg.id,
+		key: msg.id, 
+		className: `wa-bubble wa-bubble-${msg.type} ${msg.type === 'audio' && chatId === 'nico' ? 'wa-bubble-audio-custom' : ''} ${msg.type === 'image' && chatId === 'nico' ? 'wa-bubble-image-custom' : ''} ${msg.type === 'contact_link' ? 'wa-bubble-ai' : ''}`, 
+		style: msg.type === 'contact_link' ? { padding: 0, background: 'transparent', maxWidth: '300px' } : {} 
+	},
+		isVisible && React.createElement("div", { className: "wa-bubble-content" },
+			renderContent(),
+			msg.type !== 'contact_link' && React.createElement("span", { className: "wa-msg-time" },
+				msg.timestamp,
+				msg.type === 'user' && React.createElement(Check, { size: 14, className: "wa-double-check" })
+			),
+			msg.helpSection && onNavigateHelp && React.createElement("button", {
+				onClick: () => {
+					onNavigateHelp('ayuda');
+					setTimeout(() => {
+						const section = document.getElementById(msg.helpSection);
+						if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					}, 300);
+				},
+				style: {
+					marginTop: '8px',
+					padding: '6px 12px',
+					background: '#0ea5e9',
+					color: 'white',
+					border: 'none',
+					borderRadius: '6px',
+					fontSize: '12px',
+					fontWeight: '600',
+					cursor: 'pointer',
+					display: 'inline-flex',
+					alignItems: 'center',
+					gap: '4px'
+				}
+			}, React.createElement(Book, { size: 14 }), "Ver fundamento")
+		)
+	);
+}
+
+const remediationContent = {
+	diat: {
+		title: "📋 Repaso: DIAT",
+		bullets: [
+			"La DIAT debe hacerse dentro de 24 hrs del accidente",
+			"Puede denunciar el empleador, trabajador, testigo, médico o CPHS",
+			"Se presenta al organismo administrador (mutual/ISL)"
+		],
+		example: "💡 Ejemplo: Si Nico se corta en el taller a las 10:00, debe denunciarse antes de las 10:00 del día siguiente, aunque la jefa no esté."
+	},
+	trayecto: {
+		title: "🚗 Repaso: Accidente de trayecto",
+		bullets: [
+			"Cubre trayecto directo habitual entre casa↔trabajo",
+			"Desvíos personales rompen la cobertura",
+			"Se requiere documentar con parte, fotos o testigos"
+		],
+		example: "💡 Ejemplo: Si tomas un desvío para ir al supermercado, ese tramo no está cubierto."
+	},
+	prestaciones: {
+		title: "🏥 Repaso: Prestaciones médicas",
+		bullets: [
+			"Todas las prestaciones son 100% gratuitas",
+			"No hay copagos, reembolsos ni cobros al trabajador",
+			"Cubre atención, medicamentos, procedimientos, rehabilitación"
+		],
+		example: "💡 Ejemplo: Si Nico se atiende en la mutual, no paga nada: consulta, remedios y suturas son gratis."
+	},
+	traslado: {
+		title: "🚑 Repaso: Traslado de urgencia",
+		bullets: [
+			"El traslado y sus gastos son cobertura de la Ley 16.744",
+			"En urgencias vitales, puede usarse cualquier centro (Ley Urgencia)",
+			"Idealmente debe derivarse al organismo administrador para evitar cobros"
+		],
+		example: "💡 Ejemplo: Si hay sangrado severo, requiere ambulancia; los gastos corren por el organismo."
+	},
+	subsidio: {
+		title: "💰 Repaso: Subsidio e incapacidad",
+		bullets: [
+			"Prestaciones médicas son independientes del reposo",
+			"El subsidio solo aplica si hay licencia médica",
+			"Ambos se cubren por el organismo administrador"
+		],
+		example: "💡 Ejemplo: Nico puede volver a trabajar sin reposo, pero sus remedios y controles siguen siendo gratis."
+	},
+	licencia: {
+		title: "📜 Repaso: Trámite de licencias",
+		bullets: [
+			"La licencia 5/6 debe presentarse dentro de 3 días hábiles",
+			"Si la empresa no puede, el trabajador la presenta directo al organismo",
+			"No se debe esperar; los plazos son fatales"
+		],
+		example: "💡 Ejemplo: Si RR.HH. no recibe la licencia, Nico la lleva personalmente a la mutual/ISL."
+	}
+};
+
+function RemediationCard({ topic, onClose }) {
+	const content = remediationContent[topic];
+	if (!content) return null;
+
+	return React.createElement("div", {
+		style: {
+			position: 'fixed',
+			top: '50%',
+			left: '50%',
+			transform: 'translate(-50%, -50%)',
+			zIndex: 9998,
+			background: 'white',
+			padding: '20px',
+			borderRadius: '12px',
+			boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+			maxWidth: '90%',
+			width: '320px'
+		}
+	},
+		React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' } },
+			React.createElement("h3", { style: { margin: 0, fontSize: '16px', fontWeight: '700' } }, content.title),
+			React.createElement("button", {
+				onClick: onClose,
+				style: { background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', padding: '4px' }
+			}, "×")
+		),
+		React.createElement("ul", { style: { margin: '12px 0', paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6' } },
+			...content.bullets.map((b, i) => React.createElement("li", { key: i }, b))
+		),
+		React.createElement("div", {
+			style: {
+				background: '#f0f9ff',
+				padding: '12px',
+				borderRadius: '8px',
+				fontSize: '13px',
+				marginTop: '12px',
+				borderLeft: '3px solid #0ea5e9'
+			}
+		}, content.example)
+	);
+}
+
 function NotificationBanner({ message, show, onClick, title = "LA JEFA", icon = "👩‍💼" }) {
 	if (!show || !message) return null;
 
@@ -510,7 +579,10 @@ function useAudio(url) {
     return () => { a.pause(); ref.current = null; };
   }, [url]);
   return {
-    play: () => ref.current?.play?.(),
+    play: async () => {
+      await unlockAudio();
+      return ref.current?.play?.();
+    },
     stop: () => { if (ref.current) { ref.current.pause(); ref.current.currentTime = 0; } },
   };
 }
@@ -518,7 +590,8 @@ function useAudio(url) {
 function IncomingCallModal({ open, callerName = "La Jefa", subtitle = "Llamada entrante", avatar = "👩🏻‍💼", onAnswer, onDecline }) {
   return React.createElement(AnimatePresence, null,
     open && React.createElement(motion.div, {
-      className: "fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm",
+      className: "fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm",
+      style: { zIndex: 9999 },
       initial: { opacity: 0 },
       animate: { opacity: 1 },
       exit: { opacity: 0 }
@@ -552,57 +625,102 @@ function IncomingCallModal({ open, callerName = "La Jefa", subtitle = "Llamada e
 
 
 
-function AyudaLeyPopover() {
-  const [open, setOpen] = useState(false);
-  return React.createElement("div", { className: "relative" },
-    React.createElement("button", {
-      "aria-label": "Ayuda Ley 16.744",
-      onClick: () => setOpen((v) => !v),
-      className: "flex items-center gap-2 rounded-xl border bg-white/80 px-3 py-2 text-sm shadow hover:bg-white dark:border-slate-600 dark:bg-slate-800"
-    }, React.createElement(Book, { size: 16 }), " Ayuda 16.744"),
-    React.createElement(AnimatePresence, null,
-      open && React.createElement(motion.div, {
-        initial: { opacity: 0, y: 8 },
-        animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: 6 },
-        className: "absolute right-0 z-40 mt-2 w-80 rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-xl dark:border-slate-700 dark:bg-slate-900",
-		style: { width: '320px' }
-      },
-        React.createElement("div", { className: "mb-2 flex items-center gap-2 font-semibold" },
-          React.createElement(Info, { size: 16 }), " Mini‑manual"
-        ),
-        React.createElement("ul", { className: "space-y-2 text-[13px] leading-snug", style: { listStyle: 'none', padding: 0 } },
-          React.createElement("li", null, React.createElement("span", { className: "font-semibold" }, "DIAT/DIEP:"), " Denuncia en 24h desde que se conoce el accidente..."),
-          React.createElement("li", null, React.createElement("span", { className: "font-semibold" }, "Prestaciones médicas:"), " urgencia, hospitalización, diagnósticos..."),
-          React.createElement("li", null, React.createElement("span", { className: "font-semibold" }, "Trayecto:"), " cubre trayecto directo casa↔trabajo..."),
-          React.createElement("li", null, React.createElement("span", { className: "font-semibold" }, "Ingresos:"), " continuidad mediante subsidio/pensión.")
-        ),
-        React.createElement("div", { className: "mt-3 text-right" },
-          React.createElement("button", {
-            onClick: () => setOpen(false),
-            className: "rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-slate-700"
-          }, "Listo")
-        )
-      )
-    )
-  );
+function AyudaLeyButton({ onClick }) {
+  return React.createElement("button", {
+    "aria-label": "Ayuda Ley 16.744",
+    onClick: onClick,
+    style: { 
+      padding: '8px 16px', 
+      background: '#0ea5e9', 
+      color: 'white', 
+      border:'none', 
+      borderRadius: '10px', 
+      cursor: 'pointer', 
+      fontWeight: 600, 
+      fontSize:'13px', 
+      boxShadow: '0 2px 4px rgba(14, 165, 233, 0.2)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px'
+    }
+  }, React.createElement(Book, { size: 16 }), "📚 Ayuda");
 }
 
 function WhatsAppSimulator() {
     const [view, setView] = useState("list"); 
 	const [activeChat, setActiveChat] = useState("nico");
-	const [gameState, setGameState] = useState({ step: 0, score: 0, isFinished: false, isTerminated: false });
+	const [gameState, dispatchGame] = useReducer(gameReducer, initialGameState);
     const [isVibrating, setIsVibrating] = useState(false);
 	const [isTyping, setIsTyping] = useState(false); // New Typing State
 	const [confetti, setConfetti] = useState([]);
 	const [notification, setNotification] = useState({ show: false, message: "", title: "LA JEFA", icon: "👩‍💼" });
 	const [loading, setLoading] = useState(true);
+	const [preloadProgress, setPreloadProgress] = useState(0);
 	const [introPlayed, setIntroPlayed] = useState(false);
+	const [scriptReady, setScriptReady] = useState(false);
+	const [scriptData, setScriptData] = useState([]);
+	const [errorsByTopic, setErrorsByTopic] = useState({});
+	const [showRemediation, setShowRemediation] = useState(null);
 
 	const [callOpen, setCallOpen] = useState(false);
     const [nicoStarted, setNicoStarted] = useState(false); // Start Flow flag
 	const ring = useAudio(RING_URL);
 	const notify = useAudio(NOTIFY_URL);
+
+	// Unlock audio on first user interaction
+	useEffect(() => {
+		const handleFirstInteraction = async () => {
+			await unlockAudio();
+			document.removeEventListener('click', handleFirstInteraction);
+			document.removeEventListener('touchend', handleFirstInteraction);
+		};
+		document.addEventListener('click', handleFirstInteraction);
+		document.addEventListener('touchend', handleFirstInteraction);
+		return () => {
+			document.removeEventListener('click', handleFirstInteraction);
+			document.removeEventListener('touchend', handleFirstInteraction);
+		};
+	}, []);
+
+	// Load game script and preload assets once
+	useEffect(() => {
+		const load = async () => {
+			// Preload key assets
+			const preloadAssetList = assetsToPreload.map(url => {
+				if (url.endsWith('.mp3') || url.endsWith('.wav') || url.endsWith('.ogg')) {
+					return fetch(url)
+						.then(r => r.arrayBuffer())
+						.then(buf => {
+							try {
+								getAudioContext().decodeAudioData(buf);
+								setPreloadProgress(p => p + 1);
+							} catch (e) {
+								console.warn("Audio decode:", e);
+								setPreloadProgress(p => p + 1);
+							}
+						})
+						.catch(e => {
+							console.warn("Asset fetch:", e);
+							setPreloadProgress(p => p + 1);
+						});
+				} else {
+					return fetch(url)
+						.catch(e => console.warn("Asset fetch:", e))
+						.finally(() => setPreloadProgress(p => p + 1));
+				}
+			});
+			await Promise.all(preloadAssetList);
+
+			// Load game script
+			getGameScript().then(data => {
+				setScriptData(data || []);
+				const ready = !!(data && data.length);
+				setScriptReady(ready);
+				dispatchGame({ type: "SET_STATUS", value: ready ? "ready" : "idle" });
+			});
+		};
+		load();
+	}, []);
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -631,11 +749,13 @@ function WhatsAppSimulator() {
     };
 
 	const openCall = () => {
-		setCallOpen(true);
+ 		if (gameState.isFinished || gameState.isTerminated) return;
+		setCallOpen(true); // Mostrar modal de llamada
 		ring.play();
 	};
 
 	const handleAnswer = () => {
+			if (gameState.isFinished || gameState.isTerminated) return;
 		setCallOpen(false);
 		ring.stop();
 		addMessage("jefe", {
@@ -644,7 +764,7 @@ function WhatsAppSimulator() {
 			content: "No puedo hablar más, pero confío en que estén gestionando la DIAT y derivando al organismo administrador. Avísenme el cualquier cosa.",
 			timestamp: "Ahora"
 		});
-		setGameState(prev => ({ ...prev, score: prev.score + 1 }));
+		dispatchGame({ type: "ADD_SCORE", value: 1 });
         navigateToChat("jefe"); // Explicitly go to boss chat on answer
 	};
 
@@ -670,23 +790,27 @@ function WhatsAppSimulator() {
 	const initialHistory = {
 		nico: [], // Initially empty
 		jefe: [{ id: "init-j", type: "ai", content: "Habla con el Nico y recuerda enviar el informe de incidentes.", timestamp: "Ayer" }],
-		eval: [] 
+		eval: [],
+		ayuda: [
+			{ id: "ayuda-1", type: "ai", content: "¡Hola! 👋 Soy tu asistente de información sobre la **Ley 16.744**.", timestamp: "09:00" },
+			{ id: "ayuda-2", sectionId: "diat", type: "ai", content: "📋 **¿Qué es la DIAT?**\n\nDenuncia Individual de Accidente del Trabajo: debe hacerse dentro de las **24 horas** desde que se conoce el accidente. La hace el empleador; también puede denunciar el/la trabajadora, testigos, médico tratante o CPHS. Si el empleador no la hace, puedes denunciar directamente en la mutual o ISL.", timestamp: "09:00" },
+			{ id: "ayuda-3", sectionId: "prestaciones-medicas", type: "ai", content: "🏥 **Cobertura de prestaciones:**\n\n• Atención médica de urgencia\n• Hospitalización\n• Medicamentos y tratamientos\n• Rehabilitación\n• Prótesis y aparatos ortopédicos\n\n✅ Se otorgan **gratuitamente** a cargo del organismo administrador, sin copagos ni reembolsos.", timestamp: "09:01" },
+			{ id: "ayuda-4", sectionId: "organismo-administrador", type: "ai", content: "🏢 **Organismo Administrador:**\n\nEs la mutual o ISL donde tu empresa tiene contrato. En urgencias vitales, cualquier centro puede atender (Ley de Urgencia), pero idealmente debe derivarse al centro con convenio para evitar cobros adicionales.", timestamp: "09:02" },
+			{ id: "ayuda-5", sectionId: "trayecto", type: "ai", content: "🚗 **Accidente de trayecto:**\n\nSe cubre el trayecto **directo**, habitual y sin desvíos personales entre:\n• Casa ↔ Trabajo\n• Trabajo ↔ Lugar donde recibes remuneración\n\n📸 **Medios de prueba:** parte, fotos, testigos, documentos\n⚠️ Desvío personal rompe cobertura; excepción: interrupción habitual por necesidad objetiva (SUSESO).", timestamp: "09:03" },
+			{ id: "ayuda-6", sectionId: "subsidio-incapacidad", type: "ai", content: "💰 **Subsidios e ingresos (D.S. 109):**\n\nSi quedas con incapacidad temporal, recibes:\n• Continuidad de ingresos durante tratamiento (conforme D.S. 109)\n• Subsidio por incapacidad laboral\n• Pensión si queda incapacidad permanente\n\n✅ Cobertura médica sin dependencia de licencia; se otorga hasta curación o secuelas.", timestamp: "09:04" },
+			{ id: "ayuda-7", type: "ai", content: "📞 **¿Necesitas más ayuda?**\n\nPuedes contactar a:\n• Tu mutual o ISL\n• Dirección del Trabajo\n• Superintendencia de Seguridad Social\n\n¡Siempre estoy aquí para ayudarte! 💜", timestamp: "09:05" }
+		]
 	};
 	const [chatHistory, setChatHistory] = useState(initialHistory);
 	
 	const initialChatList = [
 		// Nico missing initially
-		{ id: "jefe", name: "Jefatura", lastMsg: "Habla con el Nico y recuerda enviar el...", time: "Ayer", avatar: "jefe", unread: 1 }
+		{ id: "jefe", name: "Jefatura", lastMsg: "Habla con el Nico y recuerda enviar el...", time: "Ayer", avatar: "jefe", unread: 1 },
+		{ id: "ayuda", name: "📚 Ayuda Ley 16.744", lastMsg: "Información sobre tus derechos laborales", time: "Siempre", avatar: "book", unread: 0 }
 	];
 	const [chatList, setChatList] = useState(initialChatList);
 
-	const playAudio = (path) => {
-		try {
-			const audio = new Audio(path);
-			audio.volume = 0.5;
-			audio.play().catch(e => console.log("Audio play prevented:", e));
-		} catch (e) { console.error("Audio error", e); }
-	};
+	// Use global playAudio already defined above for consistency with unlock
 
 	const triggerVibration = () => {
 		setIsVibrating(true);
@@ -779,18 +903,26 @@ function WhatsAppSimulator() {
 	};
 
 	const resetGame = () => {
-		setGameState({ step: 0, score: 0, isFinished: false, isTerminated: false });
+		dispatchGame({ type: "RESET", status: scriptReady ? "ready" : "idle" });
 		setIntroPlayed(false);
         setNicoStarted(false);
 		setChatHistory(initialHistory);
 		setChatList(initialChatList);
+ 		if (callTimerRef.current) {
+ 			clearTimeout(callTimerRef.current);
+ 			callTimerRef.current = null;
+ 		}
 		setLoading(true); 
 		setTimeout(() => setLoading(false), 1500); 
 		setActiveChat("nico");
 	};
 
 	const terminateGame = () => {
-		setGameState(prev => ({ ...prev, isTerminated: true }));
+		dispatchGame({ type: "TERMINATE" });
+		if (callTimerRef.current) {
+			clearTimeout(callTimerRef.current);
+			callTimerRef.current = null;
+		}
 		addMessage("eval", {
 			id: "term",
 			type: "system",
@@ -800,7 +932,10 @@ function WhatsAppSimulator() {
 	};
 
 	const handleGameChoice = (option) => {
-		if (gameState.isFinished) return;
+		if (gameState.isFinished || gameState.isTerminated) return;
+		if (gameState.status !== "playing") return;
+		if (!scriptReady || !scriptData.length) return;
+		const script = scriptData;
         
         // User acted! Cancel the inactivity call
         if (callTimerRef.current) {
@@ -872,7 +1007,7 @@ function WhatsAppSimulator() {
 					const contextMsg = {
 						id: (Date.now() + 5).toString(),
 						type: "system",
-						content: `❓ Contexto: "${gameScript[gameState.step].text}"`,
+						content: `❓ Contexto: "${script[gameState.step].text}"`,
 						timestamp: "Ahora"
 					};
 					addMessage("jefe", contextMsg);
@@ -893,54 +1028,86 @@ function WhatsAppSimulator() {
 
 			// 4. System Feedback
 			setTimeout(() => {
+				const earnedScore = (option.score || 0);
+				const newScore = gameState.score + earnedScore;
+				
+				let feedbackContent = option.feedback;
+				
+				// Enhanced feedback for errors
+				if (earnedScore === 0 && option.cause && option.recommendation) {
+					feedbackContent += `\n\n**¿Por qué?** ${option.cause}\n\n**Qué hacer:** ${option.recommendation}`;
+					
+					// Track error by topic
+					if (option.topic) {
+						setErrorsByTopic(prev => {
+							const count = (prev[option.topic] || 0) + 1;
+							const updated = { ...prev, [option.topic]: count };
+							
+							// Trigger remediation if 2+ errors on same topic
+							if (count >= 2 && !showRemediation) {
+								setTimeout(() => {
+									setShowRemediation(option.topic);
+								}, 3000);
+							}
+							
+							return updated;
+						});
+					}
+				}
+				
 				const feedbackMsg = {
 					id: (Date.now() + 2).toString(),
 					type: "system",
-					content: option.feedback,
-					timestamp: "System"
+					content: feedbackContent,
+					timestamp: "System",
+					helpSection: option.helpSection
 				};
 				addMessage("nico", feedbackMsg);
 
-				const earnedScore = (option.score || 0);
-				const newScore = gameState.score + earnedScore;
-				setGameState(prev => ({ ...prev, score: newScore }));
+				dispatchGame({ type: "SET_SCORE", value: newScore });
 
 				if (earnedScore === 2) {
 					triggerConfetti();
-					// Auto Sticker for correct answer
-					setTimeout(() => {
-						playAudio(SOUND_RECV);
-						addMessage("nico", {
-							id: (Date.now() + 8).toString(),
-							type: "sticker",
-							content: stickers.ok,
-							timestamp: "Ahora"
-						});
-					}, 300);
+					const shouldSticker = Math.random() < 0.5;
+					if (shouldSticker) {
+						setTimeout(() => {
+							playAudio(SOUND_RECV);
+							addMessage("nico", {
+								id: (Date.now() + 8).toString(),
+								type: "sticker",
+								content: stickers.ok,
+								timestamp: "Ahora"
+							});
+						}, 300);
+					}
 				} else if (earnedScore === 0) {
-					// Auto Sticker for wrong answer
-					setTimeout(() => {
-						playAudio(SOUND_RECV);
-						addMessage("nico", {
-							id: (Date.now() + 8).toString(),
-							type: "sticker",
-							content: stickers.gg,
-							timestamp: "Ahora"
-						});
-						// Auto Tia Notification
+					const shouldSticker = Math.random() < 0.5;
+					if (shouldSticker) {
+						setTimeout(() => {
+							playAudio(SOUND_RECV);
+							addMessage("nico", {
+								id: (Date.now() + 8).toString(),
+								type: "sticker",
+								content: stickers.gg,
+								timestamp: "Ahora"
+							});
+						}, 300);
+					}
+					const notifyTia = Math.random() < 0.35;
+					if (notifyTia) {
 						triggerTiaNotification("Mijito, me dijeron que el Nico se equivocó ¿ya lo vieron?");
-					}, 300);
+					}
 				}
 								// 5. Next Step Check
 				const nextStepIndex = gameState.step + 1;
-				if (nextStepIndex < gameScript.length) {
-					setGameState(prev => ({ ...prev, step: nextStepIndex }));
+				if (nextStepIndex < script.length) {
+					dispatchGame({ type: "ADVANCE_STEP" });
 					
 					setTimeout(() => {
 						setIsTyping(true); // Start typing for next question
 						setTimeout(() => {
 							setIsTyping(false);
-							const nextNode = gameScript[nextStepIndex];
+							const nextNode = script[nextStepIndex];
 							
 							// 5.1 Pre-Message Media (Image or Doc)
 							if (nextNode.media) {
@@ -970,7 +1137,7 @@ function WhatsAppSimulator() {
 					setTimeout(() => {
 						// REMOVED HARDCODED IMAGE
 						
-						setGameState(prev => ({ ...prev, isFinished: true }));
+						dispatchGame({ type: "FINISH" });
 						
 						// Evaluation follows
 						setTimeout(() => {
@@ -1021,7 +1188,11 @@ function WhatsAppSimulator() {
 
 	const handleIntroPlay = () => {
 		if (introPlayed) return;
+		if (!scriptReady || !scriptData.length) return;
+		if (gameState.status !== "ready") return;
+		const script = scriptData;
 		setIntroPlayed(true);
+		dispatchGame({ type: "SET_STATUS", value: "playing" });
         // Removed immediate timer from here. Call triggers after OPTIONS appear (12s later + 18s).
  
 		// 5s -> Image
@@ -1044,7 +1215,7 @@ function WhatsAppSimulator() {
 			const textMsg = { 
 				id: "init-1", 
 				type: "ai", 
-				content: gameScript[0].text, 
+				content: script[0].text, 
 				timestamp: "08:12" // Fixed timestamp to match script
 			};
 			addMessage("nico", textMsg);
@@ -1072,39 +1243,25 @@ function WhatsAppSimulator() {
 			onAnswer: handleAnswer,
 			onDecline: handleDecline
 		}),
+		showRemediation && React.createElement(RemediationCard, {
+			topic: showRemediation,
+			onClose: () => setShowRemediation(null)
+		}),
 		// TopToast removed, using NotificationBanner unified system
-		// Dev Controls & Help (Fixed Overlay)
+		// Help Button (Fixed Overlay)
 		React.createElement("div", { 
 			style: { 
 				position: 'fixed', 
 				bottom: '20px', 
 				right: '20px', 
-				zIndex: 900, 
-				display: 'flex', 
-				gap: '10px',
-				alignItems: 'center',
-				background: 'rgba(255,255,255,0.9)',
-				padding: '12px',
-				borderRadius: '16px',
-				boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-				backdropFilter: 'blur(8px)',
-				border: '1px solid rgba(0,0,0,0.05)'
+				zIndex: 900
 			} 
 		},
-			React.createElement("div", { style: { fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginRight: '4px' } }, "🎮 SST:"),
-			React.createElement("button", { 
-				onClick: openCall,
-				style: { padding: '8px 16px', background: '#10b981', color: 'white', border:'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize:'13px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)' }
-			}, "📞 Llamar"),
-			React.createElement("button", { 
-				onClick: () => triggerTiaNotification(),
-				style: { padding: '8px 16px', background: '#6366f1', color: 'white', border:'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize:'13px', boxShadow: '0 2px 4px rgba(99, 102, 241, 0.2)' }
-			}, "👵 Tía"),
-			React.createElement(AyudaLeyPopover)
+			React.createElement(AyudaLeyButton, { onClick: () => navigateToChat('ayuda') })
 		),
 
         React.createElement("div", { className: `phone-frame ${isVibrating ? 'vibrate' : ''}` },
-			React.createElement(SplashScreen, { isLoading: loading }),
+			React.createElement(SplashScreen, { isLoading: loading, preloadProgress: preloadProgress }),
 			React.createElement(NotificationBanner, { 
 				message: notification.message, 
 				show: notification.show,
@@ -1112,13 +1269,7 @@ function WhatsAppSimulator() {
 				icon: notification.icon,
 				onClick: handleNotificationClick
 			}),
-			confetti.map(c => 
-				React.createElement("div", { 
-					key: c.id, 
-					className: "floating-emoji", 
-					style: { left: `${c.x}%` } 
-				}, c.emoji)
-			),
+			confetti.length > 0 && React.createElement(ConfettiLayer, { confetti: confetti }),
             React.createElement("div", { className: "phone-notch" }),
             React.createElement("div", { className: "status-bar" },
                 React.createElement("span", null, "08:12"),
@@ -1146,7 +1297,9 @@ function WhatsAppSimulator() {
 					onReset: resetGame,
 					onTerminate: terminateGame,
 					onIntroPlay: handleIntroPlay,
-					onNavigate: navigateToChat
+					onNavigate: navigateToChat,
+					scriptReady: scriptReady,
+					script: scriptData
                 }),
             React.createElement("div", { className: "home-indicator" })
         )
@@ -1200,7 +1353,7 @@ function ChatList({ onSelect, chats }) {
     );
 }
 
-function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameState, isVibrating, isTyping, onOptionSelect, onReset, onTerminate, onIntroPlay, onNavigate }) {
+function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameState, isVibrating, isTyping, onOptionSelect, onReset, onTerminate, onIntroPlay, onNavigate, scriptReady, script = [] }) {
     const scrollRef = useRef(null);
 
     useEffect(() => {
@@ -1214,8 +1367,20 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 
 	if (chatId === 'nico') {
 		const lastMsg = messages[messages.length - 1];
-		const showOptions = !gameState.isFinished && lastMsg && lastMsg.type === 'ai' && !lastMsg.isReaction;
-		const currentOptions = showOptions ? gameScript[gameState.step].options : [];
+		const showOptions = scriptReady && !gameState.isFinished && lastMsg && lastMsg.type === 'ai' && !lastMsg.isReaction;
+		const currentNode = scriptReady ? script[gameState.step] : null;
+		const rawOptions = showOptions && currentNode ? currentNode.options || [] : [];
+		
+		// Shuffle options to prevent memorization
+		const currentOptions = useMemo(() => {
+			if (rawOptions.length === 0) return [];
+			const shuffled = [...rawOptions];
+			for (let i = shuffled.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+			}
+			return shuffled;
+		}, [rawOptions.length, gameState.step]);
 		
 		showControls = true;
 		if (currentOptions.length > 0) {
@@ -1340,7 +1505,7 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
                 React.createElement(MoreVertical, { size: 20 })
             )
         ),
-		chatId === 'nico' && !gameState.isFinished && React.createElement(ProgressBar, { step: gameState.step, total: gameScript.length }),
+		chatId === 'nico' && !gameState.isFinished && React.createElement(ProgressBar, { step: gameState.step, total: script.length || 0 }),
 		
         React.createElement("div", { className: "wa-chat-bg", ref: scrollRef },
             React.createElement("div", { className: "wa-encryption-msg" },
@@ -1348,16 +1513,13 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 				chatId === 'eval' ? "Resultados de la actividad." : "Mensajes con Jefatura."
             ),
             messages.map(msg => 
-                React.createElement("div", { key: msg.id, className: `wa-bubble wa-bubble-${msg.type} ${msg.type === 'audio' && chatId === 'nico' ? 'wa-bubble-audio-custom' : ''} ${msg.type === 'image' && chatId === 'nico' ? 'wa-bubble-image-custom' : ''} ${msg.type === 'contact_link' ? 'wa-bubble-ai' : ''}`, 
-					style: msg.type === 'contact_link' ? { padding: 0, background: 'transparent', maxWidth: '300px' } : {} },
-                    React.createElement("div", { className: "wa-bubble-content" },
-						renderMessageContent(msg),
-                        msg.type !== 'contact_link' && React.createElement("span", { className: "wa-msg-time" },
-                            msg.timestamp,
-                            msg.type === 'user' && React.createElement(Check, { size: 14, className: "wa-double-check" })
-                        )
-                    )
-                )
+                React.createElement(MessageBubble, {
+					key: msg.id,
+					msg: msg,
+					chatId: chatId,
+					renderContent: () => renderMessageContent(msg),
+					onNavigateHelp: onNavigate
+				})
             ),
 			isTyping && React.createElement(TypingBubble, null)
         ),
