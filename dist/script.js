@@ -133,8 +133,8 @@ const LICENCIA_DOC = "dist/assets/licencia_medica.pdf"; // Placeholder for Node 
 // UI Feedback Timings
 const TYPING_MS = 2000;           // Message typing delay
 const PREDELAY_MS = 2000;         // Pre-message delay before text appears
-const IMAGE_DELAY_MS = 5000;      // Delay before first image appears
-const TEXT_DELAY_MS = 9000;       // Delay before initial text message
+const IMAGE_DELAY_MS = 6000;      // Delay before first image appears
+const TEXT_DELAY_MS = 10000;       // Delay before initial text message
 const REACTION_DELAY_MS = 600;    // Sticker/reaction display delay
 const FOLLOWUP_DELAY_MS = 800;    // Follow-up message after reaction
 const NOTIFICATION_SHOW_MS = 5000; // Notification visibility duration
@@ -149,7 +149,7 @@ const NEXT_NODE_DELAY_MS = 2500;  // Delay before next question node
 const WRONG_ANSWER_DELAY_MS = 1500; // Wrong answer acknowledgment delay
 
 // Inactivity Timings
-const INACTIVITY_CALL_MS = 10000; // Trigger incoming call after inactivity
+const INACTIVITY_CALL_MS = 12000; // Trigger incoming call after inactivity
 const IMAGE_TO_TEXT_MS = 5000;    // Time from image to initial message (IMAGE_DELAY_MS)
 const TEXT_READY_MS = 9000;       // Time until options are ready
 
@@ -1741,7 +1741,14 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
     useLayoutEffect(() => {
         if (!scrollRef.current) return;
         const observer = new ResizeObserver(() => {
-             if (bottomRef.current) {
+			if (!scrollRef.current || !bottomRef.current) return;
+			
+			// Check if user is near bottom (allow 150px threshold)
+			const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+			const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+			const isNearBottom = distanceFromBottom < 150;
+
+             if (isNearBottom) {
                 bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
             }
         });
