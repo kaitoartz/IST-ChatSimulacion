@@ -557,7 +557,7 @@ const remediationContent = {
 		bullets: [
 			"La DIAT debe hacerse dentro de 24 hrs del accidente",
 			"Puede denunciar el empleador, trabajador, testigo, médico o CPHS",
-			"Se presenta al organismo administrador (mutual/ISL)"
+			"Se presenta al organismo administrador (IST/ISL)"
 		],
 		example: "💡 Ejemplo: Si Nico se corta en el taller a las 10:00, debe denunciarse antes de las 10:00 del día siguiente, aunque la jefa no esté."
 	},
@@ -577,7 +577,7 @@ const remediationContent = {
 			"No hay copagos, reembolsos ni cobros al trabajador",
 			"Cubre atención, medicamentos, procedimientos, rehabilitación"
 		],
-		example: "💡 Ejemplo: Si Nico se atiende en la mutual, no paga nada: consulta, remedios y suturas son gratis."
+		example: "💡 Ejemplo: Si Nico se atiende en el IST, no paga nada: consulta, remedios y suturas son gratis."
 	},
 	traslado: {
 		title: "🚑 Repaso: Traslado de urgencia",
@@ -604,76 +604,44 @@ const remediationContent = {
 			"Si la empresa no puede, el trabajador la presenta directo al organismo",
 			"No se debe esperar; los plazos son fatales"
 		],
-		example: "💡 Ejemplo: Si RR.HH. no recibe la licencia, Nico la lleva personalmente a la mutual/ISL."
+		example: "💡 Ejemplo: Si RR.HH. no recibe la licencia, Nico la lleva personalmente al IST."
 	}
 };
 
 function ModeSelector({ onSelectMode }) {
-	return React.createElement("div", {
-		style: {
-			position: 'fixed',
-			top: '50%',
-			left: '50%',
-			transform: 'translate(-50%, -50%)',
-			zIndex: 9999,
-			background: 'white',
-			padding: '24px',
-			borderRadius: '16px',
-			boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-			maxWidth: '90%',
-			width: '360px'
-		}
-	},
-		React.createElement("h2", { style: { margin: '0 0 8px 0', fontSize: '20px', fontWeight: '700', color: '#1f2937' } }, "Selecciona el modo"),
-		React.createElement("p", { style: { margin: '0 0 20px 0', fontSize: '14px', color: '#6b7280' } }, "Elige cómo quieres practicar:"),
-		
-		React.createElement("button", {
-			onClick: () => onSelectMode('practice'),
-			style: {
-				width: '100%',
-				padding: '16px',
-				marginBottom: '12px',
-				background: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
-				color: 'white',
-				border: 'none',
-				borderRadius: '12px',
-				fontSize: '16px',
-				fontWeight: '600',
-				cursor: 'pointer',
-				textAlign: 'left',
-				boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)'
-			}
-		},
-			React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-				React.createElement("span", { style: { fontSize: '24px' } }, "📚"),
-				React.createElement("div", null,
-					React.createElement("div", { style: { fontSize: '16px', fontWeight: '700' } }, "Modo Práctica"),
-					React.createElement("div", { style: { fontSize: '13px', opacity: 0.9, marginTop: '2px' } }, "Pistas activadas • Puntaje visible")
+	return React.createElement("div", { className: "mode-overlay" },
+		React.createElement("div", { className: "mode-notifications-container" },
+			// Practice Mode Notification
+			React.createElement("div", { 
+				className: "mode-notification-card", 
+				onClick: () => onSelectMode('practice'),
+				role: "button",
+				"aria-label": "Seleccionar Modo Práctica"
+			},
+				React.createElement("div", { className: "mode-icon-box", style: { background: 'linear-gradient(135deg, #0ea5e9, #06b6d4)' } }, "📚"),
+				React.createElement("div", { className: "mode-info" },
+					React.createElement("div", { className: "mode-header" },
+						React.createElement("span", { className: "mode-title" }, "Modo Práctica"),
+						React.createElement("span", { className: "mode-time" }, "ahora")
+					),
+					React.createElement("div", { className: "mode-desc" }, "Pistas activadas • Feedback inmediato")
 				)
-			)
-		),
-		
-		React.createElement("button", {
-			onClick: () => onSelectMode('evaluation'),
-			style: {
-				width: '100%',
-				padding: '16px',
-				background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
-				color: 'white',
-				border: 'none',
-				borderRadius: '12px',
-				fontSize: '16px',
-				fontWeight: '600',
-				cursor: 'pointer',
-				textAlign: 'left',
-				boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
-			}
-		},
-			React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-				React.createElement("span", { style: { fontSize: '24px' } }, "🎯"),
-				React.createElement("div", null,
-					React.createElement("div", { style: { fontSize: '16px', fontWeight: '700' } }, "Modo Evaluación"),
-					React.createElement("div", { style: { fontSize: '13px', opacity: 0.9, marginTop: '2px' } }, "Sin pistas • Puntaje al final")
+			),
+
+			// Evaluation Mode Notification
+			React.createElement("div", { 
+				className: "mode-notification-card", 
+				onClick: () => onSelectMode('evaluation'),
+				role: "button",
+				"aria-label": "Seleccionar Modo Evaluación"
+			},
+				React.createElement("div", { className: "mode-icon-box", style: { background: 'linear-gradient(135deg, #8b5cf6, #a855f7)' } }, "🎯"),
+				React.createElement("div", { className: "mode-info" },
+					React.createElement("div", { className: "mode-header" },
+						React.createElement("span", { className: "mode-title" }, "Modo Evaluación"),
+						React.createElement("span", { className: "mode-time" }, "ahora")
+					),
+					React.createElement("div", { className: "mode-desc" }, "Sin pistas • Puntaje final")
 				)
 			)
 		)
@@ -1062,12 +1030,12 @@ function WhatsAppSimulator() {
 		eval: [],
 		ayuda: [
 			{ id: "ayuda-1", type: "ai", content: "¡Hola! 👋 Soy tu asistente de información sobre la **Ley 16.744**.", timestamp: "09:00" },
-			{ id: "ayuda-2", sectionId: "diat", type: "ai", content: "📋 **¿Qué es la DIAT?**\n\nDenuncia Individual de Accidente del Trabajo: debe hacerse dentro de las **24 horas** desde que se conoce el accidente. La hace el empleador; también pueden denunciar la trabajadora, testigos, médico tratante o CPHS. Si el empleador no la hace, puedes denunciar directamente en el organismo administrador (mutual/ISL).", timestamp: "09:00" },
+			{ id: "ayuda-2", sectionId: "diat", type: "ai", content: "📋 **¿Qué es la DIAT?**\n\nDenuncia wIndividual de Accidente del Trabajo: debe hacerse dentro de las **24 horas** desde que se conoce el accidente. La hace el empleador; también pueden denunciar la trabajadora, testigos, médico tratante o CPHS. Si el empleador no la hace, puedes denunciar directamente en el organismo administrador (IST/ISL).", timestamp: "09:00" },
 			{ id: "ayuda-3", sectionId: "prestaciones-medicas", type: "ai", content: "🏥 **Cobertura de prestaciones:**\n\n• Atención médica de urgencia\n• Hospitalización\n• Medicamentos y tratamientos\n• Rehabilitación\n• Prótesis y aparatos ortopédicos\n\n✅ Se otorgan gratuitamente a cargo del organismo administrador, sin copagos ni reembolsos.", timestamp: "09:01" },
 			{ id: "ayuda-4", sectionId: "organismo-administrador", type: "ai", content: "🏢 **Organismo Administrador:**\n\nEs la mutual o ISL donde tu empresa tiene contrato. En urgencias vitales (excepcional), cualquier centro puede atender con posterior derivación obligatoria al OA para continuidad de atención.", timestamp: "09:02" },
 			{ id: "ayuda-5", sectionId: "trayecto", type: "ai", content: "🚗 **Accidente de trayecto:**\n\nSe cubre el trayecto **directo**, habitual y sin desvíos personales entre:\n• Casa ↔ Trabajo\n• Trabajo ↔ Lugar donde recibes remuneración\n\n📸 **Medios de prueba:** parte, fotos, testigos, documentos\n⚠️ Desvío personal rompe cobertura; excepción: interrupción habitual por necesidad objetiva (SUSESO).", timestamp: "09:03" },
 			{ id: "ayuda-6", sectionId: "subsidio-incapacidad", type: "ai", content: "💰 **Subsidios e ingresos (D.S. 109):**\n\nSi quedas con incapacidad temporal, recibes:\n• Continuidad de ingresos durante tratamiento (conforme D.S. 109)\n• Subsidio por incapacidad laboral (si hay licencia médica)\n• Pensión si queda incapacidad permanente\n\n✅ Las prestaciones médicas se otorgan gratuitamente independientemente de licencia; subsidio aplica solo con reposo.", timestamp: "09:04" },
-			{ id: "ayuda-7", type: "ai", content: "📞 **¿Necesitas más ayuda?**\n\nPuedes contactar a:\n• Tu mutual o ISL\n• Dirección del Trabajo\n• Superintendencia de Seguridad Social\n\n¡Siempre estoy aquí para ayudarte! 💜", timestamp: "09:05" }
+			{ id: "ayuda-7", type: "ai", content: "📞 **¿Necesitas más ayuda?**\n\nPuedes contactar a:\n• IST o ISL\n• Dirección del Trabajo\n• Superintendencia de Seguridad Social\n\n¡Siempre estoy aquí para ayudarte! 💜", timestamp: "09:05" }
 		]
 	};
 	const [chatHistory, setChatHistory] = useState(initialHistory);
@@ -1592,12 +1560,7 @@ function WhatsAppSimulator() {
 
     return React.createElement("main", { className: "phone-wrapper" },
 		// Mode Selector (shown before game starts)
-		!loading && !gameState.mode && React.createElement(ModeSelector, {
-			onSelectMode: (mode) => {
-				dispatchGame({ type: "SET_MODE", value: mode });
-				dispatchGame({ type: "SET_STATUS", value: "ready" });
-			}
-		}),
+
 		// Helper Components inside the main wrapper (Overlay)
 		React.createElement(IncomingCallModal, {
 			open: callOpen,
@@ -1612,17 +1575,7 @@ function WhatsAppSimulator() {
 			onClose: () => setShowRemediation(null)
 		}),
 		// TopToast removed, using NotificationBanner unified system
-		// Help Button (Fixed Overlay)
-		React.createElement("div", { 
-			style: { 
-				position: 'fixed', 
-				bottom: '20px', 
-				right: '20px', 
-				zIndex: 900
-			} 
-		},
-			React.createElement(AyudaLeyButton, { onClick: () => navigateToChat('ayuda') })
-		),
+		// Help Button removed per user request
 
         React.createElement("div", { className: `phone-frame ${isVibrating ? 'vibrate' : ''}` },
 			React.createElement(SplashScreen, { isLoading: loading, preloadProgress: preloadProgress }),
@@ -1665,7 +1618,15 @@ function WhatsAppSimulator() {
 					scriptReady: scriptReady,
 					script: scriptData
                 }),
-            React.createElement("div", { className: "home-indicator" })
+            React.createElement("div", { className: "home-indicator" }),
+
+			// Mode Selector (Moved inside phone frame)
+			!loading && !gameState.mode && React.createElement(ModeSelector, {
+				onSelectMode: (mode) => {
+					dispatchGame({ type: "SET_MODE", value: mode });
+					dispatchGame({ type: "SET_STATUS", value: "ready" });
+				}
+			})
         )
     );
 }
