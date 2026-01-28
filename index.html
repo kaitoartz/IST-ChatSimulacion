@@ -1,10 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
   <head>
     <meta charset="UTF-8">
-    <title>AI Chat Layout</title>
+    <title>IST-ChatSimulacion: Ley 16.744</title>
+    <meta name="description" content="Simulador educativo interactivo sobre derechos laborales y la Ley 16.744 de Chile">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0073ffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IST Chat">
+    
+    <link rel="manifest" href="./dist/manifest.json">
+    <link rel="icon" href="./dist/assets/logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="./dist/assets/icon-192x192.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="./dist/style.css">
   </head>
@@ -12,6 +22,29 @@
   <body>
   <div id="root"></div>
     <script type="module" src="./dist/script.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./dist/service-worker.js')
+            .then(reg => console.log('[PWA] Service Worker registered:', reg))
+            .catch(err => console.warn('[PWA] Service Worker registration failed:', err));
+        });
+      }
+      
+      // Handle install prompt
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        deferredPrompt = e;
+        console.log('[PWA] Install prompt available');
+      });
+      
+      window.addEventListener('appinstalled', () => {
+        console.log('[PWA] App installed');
+      });
+    </script>
 
   </body>
   

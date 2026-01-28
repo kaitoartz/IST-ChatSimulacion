@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "time": "08:10",
+    "text": "Me corté la mano con una lámina en el taller. ¿Qué hago?",
+    "topic": "diat",
+    "helpSection": "diat",
+    "requiresMastery": null,
+    "media": { "type": "audio", "content": "dist/assets/sounds/nico_audio.ogg", "duration": "0:12" },
+    "options": [
+      {
+        "text": "Avisar y derivar al organismo administrador (mutual/ISL); gestionar DIAT.",
+        "score": 2, "maxScore": 2,
+        "reaction": "Gracias. Iré de inmediato al centro del organismo administrador.",
+        "bossMessage": null, "feedback": "Respuesta registrada",
+        "topic": "diat"
+      },
+      {
+        "text": "Esperar a mañana para ver si mejora.",
+        "score": 0, "maxScore": 2,
+        "reaction": "¿Seguro? Me duele harto.",
+        "bossMessage": null, "feedback": "Respuesta registrada",
+        "topic": "diat"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "time": "08:12",
+    "text": "No está mi jefatura. ¿Se puede denunciar igual el accidente?",
+    "topic": "diat",
+    "helpSection": "diat",
+    "options": [
+      { "text": "Sí, el/la trabajadora o un testigo también pueden denunciar.", "score": 2, "maxScore": 2, "reaction": "Ok, la haré.", "feedback": "Respuesta registrada" },
+      { "text": "No, solo la empresa puede denunciar.", "score": 0, "maxScore": 2, "reaction": "Pucha…", "feedback": "Respuesta registrada" }
+    ]
+  },
+  {
+    "id": 3,
+    "time": "08:15",
+    "text": "Voy con dolor y sangrado. ¿Cómo me traslado?",
+    "topic": "traslado",
+    "helpSection": "traslado",
+    "options": [
+      { "text": "Pido ayuda/traslado seguro y voy al centro del organismo administrador.", "score": 2, "maxScore": 2, "reaction": "Mejor, así no me arriesgo.", "feedback": "Respuesta registrada" },
+      { "text": "Voy solo en micro para ahorrar tiempo y después veo la denuncia.", "score": 0, "maxScore": 2, "reaction": "Mmm…", "feedback": "Respuesta registrada" }
+    ]
+  },
+  {
+    "id": 4,
+    "time": "10:00",
+    "text": "¿La atención médica y los medicamentos tienen costo para mí?",
+    "topic": "prestaciones",
+    "helpSection": "prestaciones-medicas",
+    "options": [
+      { "text": "No, las prestaciones se otorgan gratuitamente por la Ley 16.744.", "score": 2, "maxScore": 2, "reaction": "Menos mal.", "feedback": "Respuesta registrada" },
+      { "text": "Sí, pago y después pido reembolso.", "score": 0, "maxScore": 2, "reaction": "Ups…", "feedback": "Respuesta registrada" }
+    ]
+  },
+  {
+    "id": 5,
+    "time": "11:30",
+    "text": "La empresa no recibe mi licencia 5/6. ¿Qué puedo hacer?",
+    "topic": "licencia",
+    "helpSection": "licencia",
+    "options": [
+      { "text": "Presentarla directamente en el organismo administrador.", "score": 2, "maxScore": 2, "reaction": "Perfecto, la llevaré.", "feedback": "Respuesta registrada" },
+      { "text": "Esperar a que vuelva RR.HH. la próxima semana.", "score": 0, "maxScore": 2, "reaction": "¿Y si me atraso…?", "feedback": "Respuesta registrada" }
+    ]
+  },
+  {
+    "id": 6,
+    "time": "12:00",
+    "text": "Si tengo reposo por accidente laboral, ¿qué beneficio me asegura ingresos?",
+    "topic": "economicas",
+    "helpSection": "subsidio-incapacidad",
+    "options": [
+      { "text": "Subsidio por incapacidad temporal del seguro (Ley 16.744).", "score": 2, "maxScore": 2, "reaction": "Ok, entendido.", "feedback": "Respuesta registrada" },
+      { "text": "Pago de vacaciones.", "score": 0, "maxScore": 2, "reaction": "Ah…", "feedback": "Respuesta registrada" }
+    ]
+  }
+]

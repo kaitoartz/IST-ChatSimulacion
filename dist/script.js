@@ -2,6 +2,7 @@
 import React, { StrictMode, useEffect, useLayoutEffect, useRef, useState, useMemo, useReducer } from "https://esm.sh/react";
 import { motion, AnimatePresence } from "https://esm.sh/framer-motion";
 import { createRoot } from "https://esm.sh/react-dom/client";
+import remarkGfm from "https://esm.sh/remark-gfm";
 import { 
 	Send, 
 	ArrowLeft, 
@@ -36,6 +37,21 @@ import {
     AlertCircle
 } from "https://esm.sh/lucide-react";
 import Markdown from "https://esm.sh/react-markdown";
+
+// Agregar estilos CSS para accesibilidad
+const style = document.createElement('style');
+style.textContent = `
+    button[role="button"]:focus {
+        outline: 3px solid #0073ffff;
+        outline-offset: 2px;
+    }
+    
+    button[role="button"]:focus-visible {
+        outline: 3px solid #0073ffff;
+        outline-offset: 2px;
+    }
+`;
+document.head.appendChild(style);
 
 createRoot(document.getElementById("root")).render(
     React.createElement(StrictMode, null, 
@@ -113,6 +129,34 @@ const DOC_ICON_PATH = "dist/assets/doc_icon.png"; // Placeholder
 const HAND_IMG = "dist/assets/hand.jpg"; // Placeholder for Node 1
 const LICENCIA_DOC = "dist/assets/licencia_medica.pdf"; // Placeholder for Node 6
 
+/* --- TIMING CONSTANTS (ms) --- */
+// UI Feedback Timings
+const TYPING_MS = 2000;           // Message typing delay
+const PREDELAY_MS = 2000;         // Pre-message delay before text appears
+const IMAGE_DELAY_MS = 5000;      // Delay before first image appears
+const TEXT_DELAY_MS = 9000;       // Delay before initial text message
+const REACTION_DELAY_MS = 600;    // Sticker/reaction display delay
+const FOLLOWUP_DELAY_MS = 800;    // Follow-up message after reaction
+const NOTIFICATION_SHOW_MS = 5000; // Notification visibility duration
+const VIBRATION_MS = 200;         // Haptic feedback duration
+const VIBRATION_RESET_MS = 300;   // Vibration state reset delay
+const CONFETTI_MS = 2000;         // Confetti animation duration
+const EVAL_MSG_DELAY_MS = 1500;   // Evaluation message display delay
+const LINK_MSG_DELAY_MS = 1000;   // Contact link display delay
+const ANSWER_FEEDBACK_MS = 1500;  // Correct/incorrect answer feedback delay
+const FOLLOWUP_ANSWER_MS = 2000;  // Follow-up message after answer
+const NEXT_NODE_DELAY_MS = 2500;  // Delay before next question node
+const WRONG_ANSWER_DELAY_MS = 1500; // Wrong answer acknowledgment delay
+
+// Inactivity Timings
+const INACTIVITY_CALL_MS = 10000; // Trigger incoming call after inactivity
+const IMAGE_TO_TEXT_MS = 5000;    // Time from image to initial message (IMAGE_DELAY_MS)
+const TEXT_READY_MS = 9000;       // Time until options are ready
+
+// Loading & Pre-game
+const PRELOAD_START_MS = 800;     // Pre-game loading simulation
+const MODE_SELECT_MS = 1500;      // Mode selection display delay
+
 const assetsToPreload = [
 	SOUND_SENT, SOUND_RECV, RING_URL, SOUND_NOTIFY, AUDIO_MSG_SRC,
 	HAND_IMG, "dist/assets/logo.png", "dist/assets/nico.jpg"
@@ -161,16 +205,51 @@ const getGameScript = async () => {
 
 const PASSING_SCORE = 14; 
 
-const initialGameState = { step: 0, score: 0, status: "idle", isFinished: false, isTerminated: false };
+const initialGameState = { 
+	step: 0, 
+	score: 0, 
+	status: "idle", 
+	isFinished: false, 
+	isTerminated: false,
+	mode: null, // 'practice' or 'evaluation'
+	topicScores: {}, // Track scores by topic for domain mastery
+	topicAttempts: {} // Track attempts by topic
+};
 
 const gameReducer = (state, action) => {
 	switch (action.type) {
 		case "RESET":
-			return { ...initialGameState, status: action.status || initialGameState.status };
+			return { ...initialGameState, status: action.status || initialGameState.status, mode: state.mode };
+		case "SET_MODE":
+			return { ...state, mode: action.value };
 		case "ADD_SCORE":
 			return { ...state, score: state.score + (action.value || 0) };
 		case "SET_SCORE":
 			return { ...state, score: action.value ?? state.score };
+		case "UPDATE_TOPIC_SCORE": {
+			const { topic, score, maxScore } = action;
+			const currentTopic = state.topicScores[topic] || { earned: 0, possible: 0 };
+			return {
+				...state,
+				topicScores: {
+					...state.topicScores,
+					[topic]: {
+						earned: currentTopic.earned + score,
+						possible: currentTopic.possible + maxScore
+					}
+				}
+			};
+		}
+		case "RECORD_ATTEMPT": {
+			const { topic } = action;
+			return {
+				...state,
+				topicAttempts: {
+					...state.topicAttempts,
+					[topic]: (state.topicAttempts[topic] || 0) + 1
+				}
+			};
+		}
 		case "ADVANCE_STEP":
 			return { ...state, step: state.step + 1 };
 		case "SET_STEP":
@@ -205,6 +284,26 @@ const getEvaluationMessage = (score) => {
 	}
 	return msg;
 };
+
+/* --- DETERMINISTIC SHUFFLE --- */
+function mulberry32(seed) {
+	let t = seed + 0x6d2b79f5;
+	return () => {
+		t = Math.imul(t ^ t >>> 15, t | 1);
+		t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+		return ((t ^ t >>> 14) >>> 0) / 4294967296;
+	};
+}
+
+function seededShuffle(arr, seed = 1) {
+	const rnd = mulberry32(seed || 1);
+	const a = arr.slice();
+	for (let i = a.length - 1; i > 0; i--) {
+		const j = Math.floor(rnd() * (i + 1));
+		[a[i], a[j]] = [a[j], a[i]];
+	}
+	return a;
+}
 
 /* --- PERFORMANCE HOOKS --- */
 function useIsVisible(ref, options = { threshold: 0.1 }) {
@@ -285,7 +384,7 @@ const getAvatarBg = (type) => {
 
 const renderAvatar = (type) => {
 	switch(type) {
-		case 'nico': return React.createElement("img", { src: "dist/assets/nico.jpg", style: { width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' } });
+		case 'nico': return React.createElement("img", { src: "dist/assets/nico.jpg", alt: "Avatar de Nico", style: { width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' } });
 		case 'jefe': return React.createElement(Briefcase, { size: 24 });
 		case 'eval': return React.createElement(Check, { size: 24 });
 		default: return React.createElement(User, { size: 24 });
@@ -345,7 +444,7 @@ function AudioBubble({ src, duration = "0:15", withAvatar = false, onPlay }) {
 
     // 2. El Avatar (opcional)
     withAvatar && React.createElement("div", { className: "audio-avatar-container" },
-        React.createElement("img", { src: "dist/assets/nico.jpg", className: "audio-internal-avatar" }),
+        React.createElement("img", { src: "dist/assets/nico.jpg", className: "audio-internal-avatar", alt: "Avatar de Nico" }),
         React.createElement("div", { className: "audio-mic-badge" }, 
             React.createElement(Mic, { size: 15, color: played ? "#0073ffff" : "#4f4f4f" })
         )
@@ -474,7 +573,7 @@ const remediationContent = {
 	prestaciones: {
 		title: "🏥 Repaso: Prestaciones médicas",
 		bullets: [
-			"Todas las prestaciones son 100% gratuitas",
+			"Las prestaciones se otorgan gratuitamente",
 			"No hay copagos, reembolsos ni cobros al trabajador",
 			"Cubre atención, medicamentos, procedimientos, rehabilitación"
 		],
@@ -484,19 +583,19 @@ const remediationContent = {
 		title: "🚑 Repaso: Traslado de urgencia",
 		bullets: [
 			"El traslado y sus gastos son cobertura de la Ley 16.744",
-			"En urgencias vitales, puede usarse cualquier centro (Ley Urgencia)",
-			"Idealmente debe derivarse al organismo administrador para evitar cobros"
+			"En urgencias vitales, excepcionalmente puede usarse cualquier centro (posterior derivación obligatoria)",
+			"Idealmente debe derivarse al organismo administrador para evitar cobros y garantizar continuidad"
 		],
-		example: "💡 Ejemplo: Si hay sangrado severo, requiere ambulancia; los gastos corren por el organismo."
+		example: "💡 Ejemplo: Si hay sangrado severo, requiere ambulancia; los gastos corren por el organismo. Luego se deriva a red del OA."
 	},
 	subsidio: {
 		title: "💰 Repaso: Subsidio e incapacidad",
 		bullets: [
-			"Prestaciones médicas son independientes del reposo",
-			"El subsidio solo aplica si hay licencia médica",
+			"Las prestaciones médicas se otorgan gratuitamente independientemente del reposo",
+			"El subsidio solo aplica si hay licencia médica (incapacidad temporal)",
 			"Ambos se cubren por el organismo administrador"
 		],
-		example: "💡 Ejemplo: Nico puede volver a trabajar sin reposo, pero sus remedios y controles siguen siendo gratis."
+		example: "💡 Ejemplo: Nico puede volver a trabajar sin reposo, pero sus remedios y controles siguen siendo gratuitamente otorgados por el OA."
 	},
 	licencia: {
 		title: "📜 Repaso: Trámite de licencias",
@@ -508,6 +607,78 @@ const remediationContent = {
 		example: "💡 Ejemplo: Si RR.HH. no recibe la licencia, Nico la lleva personalmente a la mutual/ISL."
 	}
 };
+
+function ModeSelector({ onSelectMode }) {
+	return React.createElement("div", {
+		style: {
+			position: 'fixed',
+			top: '50%',
+			left: '50%',
+			transform: 'translate(-50%, -50%)',
+			zIndex: 9999,
+			background: 'white',
+			padding: '24px',
+			borderRadius: '16px',
+			boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+			maxWidth: '90%',
+			width: '360px'
+		}
+	},
+		React.createElement("h2", { style: { margin: '0 0 8px 0', fontSize: '20px', fontWeight: '700', color: '#1f2937' } }, "Selecciona el modo"),
+		React.createElement("p", { style: { margin: '0 0 20px 0', fontSize: '14px', color: '#6b7280' } }, "Elige cómo quieres practicar:"),
+		
+		React.createElement("button", {
+			onClick: () => onSelectMode('practice'),
+			style: {
+				width: '100%',
+				padding: '16px',
+				marginBottom: '12px',
+				background: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
+				color: 'white',
+				border: 'none',
+				borderRadius: '12px',
+				fontSize: '16px',
+				fontWeight: '600',
+				cursor: 'pointer',
+				textAlign: 'left',
+				boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)'
+			}
+		},
+			React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+				React.createElement("span", { style: { fontSize: '24px' } }, "📚"),
+				React.createElement("div", null,
+					React.createElement("div", { style: { fontSize: '16px', fontWeight: '700' } }, "Modo Práctica"),
+					React.createElement("div", { style: { fontSize: '13px', opacity: 0.9, marginTop: '2px' } }, "Pistas activadas • Puntaje visible")
+				)
+			)
+		),
+		
+		React.createElement("button", {
+			onClick: () => onSelectMode('evaluation'),
+			style: {
+				width: '100%',
+				padding: '16px',
+				background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
+				color: 'white',
+				border: 'none',
+				borderRadius: '12px',
+				fontSize: '16px',
+				fontWeight: '600',
+				cursor: 'pointer',
+				textAlign: 'left',
+				boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+			}
+		},
+			React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+				React.createElement("span", { style: { fontSize: '24px' } }, "🎯"),
+				React.createElement("div", null,
+					React.createElement("div", { style: { fontSize: '16px', fontWeight: '700' } }, "Modo Evaluación"),
+					React.createElement("div", { style: { fontSize: '13px', opacity: 0.9, marginTop: '2px' } }, "Sin pistas • Puntaje al final")
+				)
+			)
+		)
+	);
+}
 
 function RemediationCard({ topic, onClose }) {
 	const content = remediationContent[topic];
@@ -523,16 +694,17 @@ function RemediationCard({ topic, onClose }) {
 			background: 'white',
 			padding: '20px',
 			borderRadius: '12px',
-			boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+			boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
 			maxWidth: '90%',
-			width: '320px'
+			width: '340px',
+			border: '2px solid #f59e0b'
 		}
 	},
 		React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' } },
-			React.createElement("h3", { style: { margin: 0, fontSize: '16px', fontWeight: '700' } }, content.title),
+			React.createElement("h3", { style: { margin: 0, fontSize: '16px', fontWeight: '700', color: '#f59e0b' } }, content.title),
 			React.createElement("button", {
 				onClick: onClose,
-				style: { background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', padding: '4px' }
+				style: { background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', padding: '4px', color: '#6b7280' }
 			}, "×")
 		),
 		React.createElement("ul", { style: { margin: '12px 0', paddingLeft: '20px', fontSize: '14px', lineHeight: '1.6' } },
@@ -540,14 +712,28 @@ function RemediationCard({ topic, onClose }) {
 		),
 		React.createElement("div", {
 			style: {
-				background: '#f0f9ff',
+				background: '#fef3c7',
 				padding: '12px',
 				borderRadius: '8px',
 				fontSize: '13px',
 				marginTop: '12px',
-				borderLeft: '3px solid #0ea5e9'
+				borderLeft: '3px solid #f59e0b'
 			}
-		}, content.example)
+		}, content.example),
+		React.createElement("button", {
+			onClick: onClose,
+			style: {
+				width: '100%',
+				marginTop: '16px',
+				padding: '10px',
+				background: '#f59e0b',
+				color: 'white',
+				border: 'none',
+				borderRadius: '8px',
+				fontWeight: '600',
+				cursor: 'pointer'
+			}
+		}, "Entendido")
 	);
 }
 
@@ -568,7 +754,7 @@ function NotificationBanner({ message, show, onClick, title = "LA JEFA", icon = 
 
 /* --- SST WIDGET HELPERS --- */
 
-const NOTIFY_URL = "https://cdn.pixabay.com/download/audio/2022/03/15/audio_2c4d36a3fc.mp3?filename=ui-notification-234729.mp3";
+const NOTIFY_URL = "dist/assets/sounds/notification.wav";
 
 function useAudio(url) {
   const ref = useRef(null);
@@ -581,9 +767,38 @@ function useAudio(url) {
   return {
     play: async () => {
       await unlockAudio();
-      return ref.current?.play?.();
+      try {
+        return await ref.current?.play?.();
+      } catch (e) {
+        console.warn("Audio play failed:", url, e);
+      }
     },
     stop: () => { if (ref.current) { ref.current.pause(); ref.current.currentTime = 0; } },
+  };
+}
+
+function useSfx(url, options = {}) {
+  const { volume = 0.5 } = options;
+  const ref = useRef(null);
+  useEffect(() => {
+    const a = new Audio(url);
+    a.preload = "auto";
+    a.volume = volume;
+    ref.current = a;
+    return () => { a.pause(); ref.current = null; };
+  }, [url, volume]);
+  return {
+    play: async () => {
+      await unlockAudio();
+      if (ref.current) {
+        ref.current.currentTime = 0;
+        try {
+          await ref.current.play();
+        } catch (e) {
+          console.warn('SFX play failed:', url, e);
+        }
+      }
+    }
   };
 }
 
@@ -624,6 +839,20 @@ function IncomingCallModal({ open, callerName = "La Jefa", subtitle = "Llamada e
 }
 
 
+
+// Check if user has mastered a topic (≥80% correct)
+const checkTopicMastery = (topicScores, topic, threshold = 0.8) => {
+	const stats = topicScores[topic];
+	if (!stats || stats.possible === 0) return false;
+	return (stats.earned / stats.possible) >= threshold;
+};
+
+// Get mastery percentage for a topic
+const getTopicMastery = (topicScores, topic) => {
+	const stats = topicScores[topic];
+	if (!stats || stats.possible === 0) return 0;
+	return Math.round((stats.earned / stats.possible) * 100);
+};
 
 function AyudaLeyButton({ onClick }) {
   return React.createElement("button", {
@@ -666,6 +895,12 @@ function WhatsAppSimulator() {
     const [nicoStarted, setNicoStarted] = useState(false); // Start Flow flag
 	const ring = useAudio(RING_URL);
 	const notify = useAudio(NOTIFY_URL);
+	const sfxSent = useSfx(SOUND_SENT);
+	const sfxRecv = useSfx(SOUND_RECV);
+	const sfxNotify = useSfx(SOUND_NOTIFY);
+	
+	// Ref to handle pending navigation safely
+	const pendingNavRef = useRef(null);
 
 	// Unlock audio on first user interaction
 	useEffect(() => {
@@ -681,6 +916,36 @@ function WhatsAppSimulator() {
 			document.removeEventListener('touchend', handleFirstInteraction);
 		};
 	}, []);
+
+	// Cleanup global: timers and sounds on unmount
+	useEffect(() => {
+		return () => {
+			if (callTimerRef.current) clearTimeout(callTimerRef.current);
+			ring.stop();
+		};
+	}, []);
+
+	// Cleanup on game end
+	useEffect(() => {
+		if (gameState.isFinished || gameState.isTerminated) {
+			if (callTimerRef.current) {
+				clearTimeout(callTimerRef.current);
+				callTimerRef.current = null;
+			}
+			setCallOpen(false);
+			ring.stop();
+		}
+	}, [gameState.isFinished, gameState.isTerminated]);
+
+	// Process pending navigation safely
+	useEffect(() => {
+		if (pendingNavRef.current) {
+			const { targetChat, targetView } = pendingNavRef.current;
+			setActiveChat(targetChat);
+			setView(targetView);
+			pendingNavRef.current = null;
+		}
+	});
 
 	// Load game script and preload assets once
 	useEffect(() => {
@@ -725,47 +990,50 @@ function WhatsAppSimulator() {
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setLoading(false);
-		}, 3000); 
+		}, MODE_SELECT_MS); 
 		return () => clearTimeout(timer);
 	}, []);
 
-    // Start Flow: Trigger Nico's audio after 3s in Boss Chat
+    // Start Flow: Trigger Nico's audio after delay in Boss Chat
     useEffect(() => {
         if (!nicoStarted && activeChat === 'jefe') {
             setNicoStarted(true);
             setTimeout(() => {
                 receiveNicoAudio();
-            }, 3000);
+            }, MODE_SELECT_MS);
         }
     }, [activeChat, nicoStarted]);
 
     const receiveNicoAudio = () => {
-        playAudio(SOUND_NOTIFY);
+        sfxNotify.play();
         triggerVibration();
         const audioMsg = { id: "audio-1", type: "audio", content: AUDIO_MSG_SRC, timestamp: "08:10", duration: "0:12" };
         addMessage("nico", audioMsg);
         setNotification({ show: true, message: "🎤 Audio (0:12)", title: "Nico compita IST", icon: "👷" });
-        setTimeout(() => setNotification(s => ({...s, show: false})), 4000);
+        // Sticky notification for initial contact. Closes on click.
     };
 
 	const openCall = () => {
  		if (gameState.isFinished || gameState.isTerminated) return;
-		setCallOpen(true); // Mostrar modal de llamada
+		if (!(activeChat === 'nico' && view === 'chat')) return; // Only in Nico's chat
+		setCallOpen(true);
 		ring.play();
 	};
 
 	const handleAnswer = () => {
-			if (gameState.isFinished || gameState.isTerminated) return;
+		if (gameState.isFinished || gameState.isTerminated) return;
 		setCallOpen(false);
 		ring.stop();
 		addMessage("jefe", {
-			id: Date.now().toString(), // No crypto.randomUUID yet just to be safe in all envs
+			id: Date.now().toString(),
 			type: "ai",
 			content: "No puedo hablar más, pero confío en que estén gestionando la DIAT y derivando al organismo administrador. Avísenme el cualquier cosa.",
 			timestamp: "Ahora"
 		});
 		dispatchGame({ type: "ADD_SCORE", value: 1 });
-        navigateToChat("jefe"); // Explicitly go to boss chat on answer
+		
+		navigateToChat("jefe");
+		setChatList(prev => prev.map(c => c.id === "jefe" ? { ...c, unread: 0 } : c));
 	};
 
 	const handleDecline = () => {
@@ -777,13 +1045,14 @@ function WhatsAppSimulator() {
 			content: "🚫 Llamada perdida de la Jefa. Recuerda gestionar la DIAT y documentar el accidente.",
 			timestamp: "Ahora"
 		});
-        // Do NOT navigate. Stay on current screen.
+		navigateToChat("jefe");
+		setChatList(prev => prev.map(c => c.id === "jefe" ? { ...c, unread: 0 } : c));
 	};
 
 	const triggerTiaNotification = (msg = "¿Qué le pasó a mi niño? ¿Es grave?") => {
 		setNotification({ show: true, message: msg, title: "Tía del Nico", icon: "👵" });
 		notify.play();
-		setTimeout(() => setNotification(s => ({ ...s, show: false })), 5000);
+		setTimeout(() => setNotification(s => ({ ...s, show: false })), NOTIFICATION_SHOW_MS);
 	};
 
 	// Persistent Chat History
@@ -793,11 +1062,11 @@ function WhatsAppSimulator() {
 		eval: [],
 		ayuda: [
 			{ id: "ayuda-1", type: "ai", content: "¡Hola! 👋 Soy tu asistente de información sobre la **Ley 16.744**.", timestamp: "09:00" },
-			{ id: "ayuda-2", sectionId: "diat", type: "ai", content: "📋 **¿Qué es la DIAT?**\n\nDenuncia Individual de Accidente del Trabajo: debe hacerse dentro de las **24 horas** desde que se conoce el accidente. La hace el empleador; también puede denunciar el/la trabajadora, testigos, médico tratante o CPHS. Si el empleador no la hace, puedes denunciar directamente en la mutual o ISL.", timestamp: "09:00" },
-			{ id: "ayuda-3", sectionId: "prestaciones-medicas", type: "ai", content: "🏥 **Cobertura de prestaciones:**\n\n• Atención médica de urgencia\n• Hospitalización\n• Medicamentos y tratamientos\n• Rehabilitación\n• Prótesis y aparatos ortopédicos\n\n✅ Se otorgan **gratuitamente** a cargo del organismo administrador, sin copagos ni reembolsos.", timestamp: "09:01" },
-			{ id: "ayuda-4", sectionId: "organismo-administrador", type: "ai", content: "🏢 **Organismo Administrador:**\n\nEs la mutual o ISL donde tu empresa tiene contrato. En urgencias vitales, cualquier centro puede atender (Ley de Urgencia), pero idealmente debe derivarse al centro con convenio para evitar cobros adicionales.", timestamp: "09:02" },
+			{ id: "ayuda-2", sectionId: "diat", type: "ai", content: "📋 **¿Qué es la DIAT?**\n\nDenuncia Individual de Accidente del Trabajo: debe hacerse dentro de las **24 horas** desde que se conoce el accidente. La hace el empleador; también pueden denunciar la trabajadora, testigos, médico tratante o CPHS. Si el empleador no la hace, puedes denunciar directamente en el organismo administrador (mutual/ISL).", timestamp: "09:00" },
+			{ id: "ayuda-3", sectionId: "prestaciones-medicas", type: "ai", content: "🏥 **Cobertura de prestaciones:**\n\n• Atención médica de urgencia\n• Hospitalización\n• Medicamentos y tratamientos\n• Rehabilitación\n• Prótesis y aparatos ortopédicos\n\n✅ Se otorgan gratuitamente a cargo del organismo administrador, sin copagos ni reembolsos.", timestamp: "09:01" },
+			{ id: "ayuda-4", sectionId: "organismo-administrador", type: "ai", content: "🏢 **Organismo Administrador:**\n\nEs la mutual o ISL donde tu empresa tiene contrato. En urgencias vitales (excepcional), cualquier centro puede atender con posterior derivación obligatoria al OA para continuidad de atención.", timestamp: "09:02" },
 			{ id: "ayuda-5", sectionId: "trayecto", type: "ai", content: "🚗 **Accidente de trayecto:**\n\nSe cubre el trayecto **directo**, habitual y sin desvíos personales entre:\n• Casa ↔ Trabajo\n• Trabajo ↔ Lugar donde recibes remuneración\n\n📸 **Medios de prueba:** parte, fotos, testigos, documentos\n⚠️ Desvío personal rompe cobertura; excepción: interrupción habitual por necesidad objetiva (SUSESO).", timestamp: "09:03" },
-			{ id: "ayuda-6", sectionId: "subsidio-incapacidad", type: "ai", content: "💰 **Subsidios e ingresos (D.S. 109):**\n\nSi quedas con incapacidad temporal, recibes:\n• Continuidad de ingresos durante tratamiento (conforme D.S. 109)\n• Subsidio por incapacidad laboral\n• Pensión si queda incapacidad permanente\n\n✅ Cobertura médica sin dependencia de licencia; se otorga hasta curación o secuelas.", timestamp: "09:04" },
+			{ id: "ayuda-6", sectionId: "subsidio-incapacidad", type: "ai", content: "💰 **Subsidios e ingresos (D.S. 109):**\n\nSi quedas con incapacidad temporal, recibes:\n• Continuidad de ingresos durante tratamiento (conforme D.S. 109)\n• Subsidio por incapacidad laboral (si hay licencia médica)\n• Pensión si queda incapacidad permanente\n\n✅ Las prestaciones médicas se otorgan gratuitamente independientemente de licencia; subsidio aplica solo con reposo.", timestamp: "09:04" },
 			{ id: "ayuda-7", type: "ai", content: "📞 **¿Necesitas más ayuda?**\n\nPuedes contactar a:\n• Tu mutual o ISL\n• Dirección del Trabajo\n• Superintendencia de Seguridad Social\n\n¡Siempre estoy aquí para ayudarte! 💜", timestamp: "09:05" }
 		]
 	};
@@ -814,8 +1083,8 @@ function WhatsAppSimulator() {
 
 	const triggerVibration = () => {
 		setIsVibrating(true);
-		if (navigator.vibrate) navigator.vibrate(200);
-		setTimeout(() => setIsVibrating(false), 300);
+		if (navigator.vibrate) navigator.vibrate(VIBRATION_MS);
+		setTimeout(() => setIsVibrating(false), VIBRATION_RESET_MS);
 	};
 
 	const triggerConfetti = () => {
@@ -829,7 +1098,7 @@ function WhatsAppSimulator() {
 			});
 		}
 		setConfetti(newConfetti);
-		setTimeout(() => setConfetti([]), 2000);
+		setTimeout(() => setConfetti([]), CONFETTI_MS);
 	};
 
     const handleChatSelect = (chatId) => {
@@ -844,16 +1113,22 @@ function WhatsAppSimulator() {
 	};
 
 	const handleNotificationClick = () => {
-		setNotification({ show: false, message: "" });
-        if (notification.title === "Tía del Nico") return; // Just close for Tía
+		const currentTitle = notification.title;
 		
-		const targetId = notification.title === "Evaluación" ? "eval" : (notification.title === "Nico compita IST" ? "nico" : "jefe");
+        if (currentTitle === "Tía del Nico") {
+			setNotification(prev => ({ ...prev, show: false }));
+			return;
+		}
 		
-		// Ensure chat exists in list and clear unread count
+		// Determine target chat
+		let targetId = "jefe";
+		if (currentTitle === "Evaluación") targetId = "eval";
+		else if (currentTitle === "Nico compita IST") targetId = "nico";
+		
+		// Update chat list to add Nico if needed
 		setChatList(prev => {
 			const exists = prev.find(c => c.id === targetId);
 			if (!exists && targetId === "nico") {
-				// Add nico chat if it doesn't exist
 				return [{ 
 					id: "nico", 
 					name: "Nico compita IST", 
@@ -863,15 +1138,14 @@ function WhatsAppSimulator() {
 					unread: 0 
 				}, ...prev];
 			}
-			// Clear unread count for the target chat
 			return prev.map(c => c.id === targetId ? { ...c, unread: 0 } : c);
 		});
 		
-		// Update active chat and view
-		setTimeout(() => {
-			setActiveChat(targetId);
-			setView("chat");
-		}, 0);  // Microtask to ensure chatList is updated first
+		// Close notification
+		setNotification(prev => ({ ...prev, show: false }));
+		
+		// Store navigation to apply in useEffect
+		pendingNavRef.current = { targetChat: targetId, targetView: "chat" };
 	};
 
 	const addMessage = (chatId, msg) => {
@@ -929,12 +1203,14 @@ function WhatsAppSimulator() {
         setNicoStarted(false);
 		setChatHistory(initialHistory);
 		setChatList(initialChatList);
+		setErrorsByTopic({});
+		setShowRemediation(null);
  		if (callTimerRef.current) {
  			clearTimeout(callTimerRef.current);
  			callTimerRef.current = null;
  		}
 		setLoading(true); 
-		setTimeout(() => setLoading(false), 1500); 
+		setTimeout(() => setLoading(false), MODE_SELECT_MS); 
 		setActiveChat("nico");
 	};
 
@@ -957,6 +1233,7 @@ function WhatsAppSimulator() {
 		if (gameState.status !== "playing") return;
 		if (!scriptReady || !scriptData.length) return;
 		const script = scriptData;
+		const isPracticeMode = gameState.mode === 'practice';
         
         // User acted! Cancel the inactivity call
         if (callTimerRef.current) {
@@ -964,8 +1241,13 @@ function WhatsAppSimulator() {
             callTimerRef.current = null;
         }
 
+		// Track topic attempt
+		if (option.topic) {
+			dispatchGame({ type: "RECORD_ATTEMPT", topic: option.topic });
+		}
+
 		// 1. User Choice (SEND)
-		playAudio(SOUND_SENT);
+		sfxSent.play();
 		const userMsg = {
 			id: Date.now().toString(),
 			type: "user",
@@ -978,7 +1260,7 @@ function WhatsAppSimulator() {
 		setIsTyping(true); // Start typing
 		setTimeout(() => {
 			setIsTyping(false); // Stop typing
-			playAudio(SOUND_RECV);
+			sfxRecv.play();
 			triggerVibration();
 			const reactionMsg = {
 				id: (Date.now() + 1).toString(),
@@ -992,7 +1274,7 @@ function WhatsAppSimulator() {
 			// 2.5 Optional Sticker
 			if (option.sticker) {
 				setTimeout(() => {
-					playAudio(SOUND_RECV);
+					sfxRecv.play();
 					const stickerMsg = {
 						id: (Date.now() + 5).toString(),
 						type: "sticker",
@@ -1006,7 +1288,7 @@ function WhatsAppSimulator() {
 			// 2.6 Optional Response Media (Image/Doc attached to the response)
 			if (option.media) {
 				setTimeout(() => {
-					playAudio(SOUND_RECV);
+					sfxRecv.play();
 					const mediaMsg = {
 						id: (Date.now() + 6).toString(),
 						type: option.media.type, 
@@ -1022,7 +1304,7 @@ function WhatsAppSimulator() {
 			// 3. Boss Notification
 			if (option.bossMessage) {
 				setTimeout(() => {
-					playAudio(SOUND_NOTIFY);
+					sfxNotify.play();
 
 					// 3.1 Context Message (The Question)
 					const contextMsg = {
@@ -1043,23 +1325,40 @@ function WhatsAppSimulator() {
 					addMessage("jefe", bossMsg);
 
 					setNotification({ show: true, message: option.bossMessage, title: "LA JEFA", icon: "👩‍💼" });
-					setTimeout(() => setNotification({ show: false, message: "" }), 5000);
+					setTimeout(() => setNotification({ show: false, message: "" }), NOTIFICATION_SHOW_MS);
 				}, 1500);
 			}
 
 			// 4. System Feedback
 			setTimeout(() => {
 				const earnedScore = (option.score || 0);
+				const maxScore = option.maxScore || 2; // Default max score per question
 				const newScore = gameState.score + earnedScore;
+				
+				// Update topic scores for domain mastery
+				if (option.topic) {
+					dispatchGame({ 
+						type: "UPDATE_TOPIC_SCORE", 
+						topic: option.topic, 
+						score: earnedScore, 
+						maxScore: maxScore 
+					});
+				}
 				
 				let feedbackContent = option.feedback;
 				
-				// Enhanced feedback for errors
-				if (earnedScore === 0 && option.cause && option.recommendation) {
-					feedbackContent += `\n\n**¿Por qué?** ${option.cause}\n\n**Qué hacer:** ${option.recommendation}`;
+				// Mode-specific feedback
+				if (isPracticeMode) {
+					// Practice Mode: Show detailed feedback
+					if (earnedScore === 0 && option.cause && option.recommendation) {
+						feedbackContent += `\n\n**¿Por qué?** ${option.cause}\n\n**💡 Pista:** ${option.recommendation}`;
+					}
 					
-					// Track error by topic
-					if (option.topic) {
+					// Show current score
+					feedbackContent += `\n\n**Puntaje actual:** ${newScore} pts`;
+					
+					// Track errors for remediation
+					if (earnedScore === 0 && option.topic) {
 						setErrorsByTopic(prev => {
 							const count = (prev[option.topic] || 0) + 1;
 							const updated = { ...prev, [option.topic]: count };
@@ -1074,6 +1373,13 @@ function WhatsAppSimulator() {
 							return updated;
 						});
 					}
+				} else {
+					// Evaluation Mode: Minimal feedback
+					if (earnedScore > 0) {
+						feedbackContent = "✅ Respuesta registrada";
+					} else {
+						feedbackContent = "Respuesta registrada";
+					}
 				}
 				
 				const feedbackMsg = {
@@ -1081,7 +1387,7 @@ function WhatsAppSimulator() {
 					type: "system",
 					content: feedbackContent,
 					timestamp: "System",
-					helpSection: option.helpSection
+					helpSection: isPracticeMode ? option.helpSection : null
 				};
 				addMessage("nico", feedbackMsg);
 
@@ -1092,7 +1398,7 @@ function WhatsAppSimulator() {
 					const shouldSticker = Math.random() < 0.5;
 					if (shouldSticker) {
 						setTimeout(() => {
-							playAudio(SOUND_RECV);
+							sfxRecv.play();
 							addMessage("nico", {
 								id: (Date.now() + 8).toString(),
 								type: "sticker",
@@ -1105,7 +1411,7 @@ function WhatsAppSimulator() {
 					const shouldSticker = Math.random() < 0.5;
 					if (shouldSticker) {
 						setTimeout(() => {
-							playAudio(SOUND_RECV);
+							sfxRecv.play();
 							addMessage("nico", {
 								id: (Date.now() + 8).toString(),
 								type: "sticker",
@@ -1119,8 +1425,39 @@ function WhatsAppSimulator() {
 						triggerTiaNotification("Mijito, me dijeron que el Nico se equivocó ¿ya lo vieron?");
 					}
 				}
-								// 5. Next Step Check
+								// 5. Next Step Check with Domain Gates
 				const nextStepIndex = gameState.step + 1;
+				
+				// Check if there's a gate requirement
+				const currentNode = script[gameState.step];
+				const requiresMastery = currentNode.requiresMastery; // e.g., "diat" topic
+				
+				if (requiresMastery && isPracticeMode) {
+					// Check if user has mastered the required topic
+					const hasMastery = checkTopicMastery(gameState.topicScores, requiresMastery);
+					const masteryPercent = getTopicMastery(gameState.topicScores, requiresMastery);
+					
+					if (!hasMastery) {
+						// User hasn't mastered the topic - show gate message
+						setTimeout(() => {
+							const gateMsg = {
+								id: (Date.now() + 3).toString(),
+								type: "system",
+								content: `🚧 **Dominio insuficiente**\n\nNecesitas ≥80% en ${requiresMastery.toUpperCase()} para continuar.\n\n📊 Tu nivel actual: **${masteryPercent}%**\n\n💡 **Pista:** Revisa la sección de Ayuda sobre ${requiresMastery} y vuelve a intentar las preguntas anteriores.`,
+								timestamp: "Sistema"
+							};
+							addMessage("nico", gateMsg);
+							
+							// Don't advance, allow retry
+							// Show remediation card
+							setTimeout(() => {
+								setShowRemediation(requiresMastery);
+							}, 2000);
+						}, 1500);
+						return; // Block advancement
+					}
+				}
+				
 				if (nextStepIndex < script.length) {
 					dispatchGame({ type: "ADVANCE_STEP" });
 					
@@ -1150,10 +1487,10 @@ function WhatsAppSimulator() {
 								timestamp: nextNode.media ? "Ahora" : (nextNode.time.includes(":") ? nextNode.time : "12:00")
 							};
 							addMessage("nico", aiMsg);
-							playAudio(SOUND_RECV);
+							sfxRecv.play();
 							triggerVibration();
-						}, 2000); // Typing delay
-					}, 2000); // Pre-delay
+						}, TYPING_MS); // Typing delay
+					}, PREDELAY_MS); // Pre-delay
 				} else {
 					setTimeout(() => {
 						// REMOVED HARDCODED IMAGE
@@ -1189,20 +1526,20 @@ function WhatsAppSimulator() {
 								};
 								addMessage("nico", linkMsg);
 
-								playAudio(SOUND_NOTIFY);
+								sfxNotify.play();
 								setNotification({ show: true, message: "Tus resultados están listos.", title: "Evaluación", icon: "✅" });
-								setTimeout(() => setNotification({ show: false, message: "" }), 5000);
+								setTimeout(() => setNotification({ show: false, message: "" }), NOTIFICATION_SHOW_MS);
 								
 								if (newScore >= PASSING_SCORE && window.parent) {
 									window.parent.postMessage({ type: 'complete'}, '*');
 								}
-							}, 1000);
+							}, LINK_MSG_DELAY_MS);
 
-						}, 1500); // Reduced delay for better feel
-					}, 1000);
+						}, EVAL_MSG_DELAY_MS); // Reduced delay for better feel
+					}, ANSWER_FEEDBACK_MS);
 				}
-			}, 2500);
-		}, 1500);
+			}, NEXT_NODE_DELAY_MS);
+		}, ANSWER_FEEDBACK_MS);
 	};
 
     const callTimerRef = useRef(null); // Ref to store call timer
@@ -1216,9 +1553,9 @@ function WhatsAppSimulator() {
 		dispatchGame({ type: "SET_STATUS", value: "playing" });
         // Removed immediate timer from here. Call triggers after OPTIONS appear (12s later + 18s).
  
-		// 5s -> Image
+		// Image -> Text sequence
 		setTimeout(() => {
-			playAudio(SOUND_RECV);
+			sfxRecv.play();
 			triggerVibration();
 			const imgMsg = { 
 				id: "img-1", 
@@ -1227,11 +1564,11 @@ function WhatsAppSimulator() {
 				timestamp: "08:11" 
 			};
 			addMessage("nico", imgMsg);
-		}, 5000);
+		}, IMAGE_DELAY_MS);
 
-		// 12s -> Text (AND Start Inactivity Timer)
+		// Text message with inactivity timer
 		setTimeout(() => {
-			playAudio(SOUND_RECV);
+			sfxRecv.play();
 			triggerVibration();
 			const textMsg = { 
 				id: "init-1", 
@@ -1244,9 +1581,8 @@ function WhatsAppSimulator() {
             // Start Inactivity Timer for Call (18s AFTER options appear)
             // Options appear effectively when this message arrives.
             if (callTimerRef.current) clearTimeout(callTimerRef.current);
-            callTimerRef.current = setTimeout(() => openCall(), 10000);
-
-		}, 9000);
+			callTimerRef.current = setTimeout(() => openCall(), INACTIVITY_CALL_MS);
+		}, TEXT_DELAY_MS);
 	};
 
 	const navigateToChat = (chatId) => {
@@ -1255,6 +1591,13 @@ function WhatsAppSimulator() {
 	};
 
     return React.createElement("main", { className: "phone-wrapper" },
+		// Mode Selector (shown before game starts)
+		!loading && !gameState.mode && React.createElement(ModeSelector, {
+			onSelectMode: (mode) => {
+				dispatchGame({ type: "SET_MODE", value: mode });
+				dispatchGame({ type: "SET_STATUS", value: "ready" });
+			}
+		}),
 		// Helper Components inside the main wrapper (Overlay)
 		React.createElement(IncomingCallModal, {
 			open: callOpen,
@@ -1376,41 +1719,74 @@ function ChatList({ onSelect, chats }) {
 
 function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameState, isVibrating, isTyping, onOptionSelect, onReset, onTerminate, onIntroPlay, onNavigate, scriptReady, script = [] }) {
     const scrollRef = useRef(null);
+    const bottomRef = useRef(null);
 
+    // Scroll on New Messages or Typing
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages, gameState, isTyping]); // Scroll on typing too
+        const scrollToBottom = () => {
+             if (bottomRef.current) {
+                bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+            }
+        };
+
+		// 1. Immediate scroll attempt
+		scrollToBottom();
+        
+        // 2. Delayed scroll for any layout shifts
+		const timer = setTimeout(scrollToBottom, 400); 
+        return () => clearTimeout(timer);
+    }, [messages, gameState.step, isTyping]);
+
+    // Scroll on Container Resize (e.g. Controls appearing)
+    useLayoutEffect(() => {
+        if (!scrollRef.current) return;
+        const observer = new ResizeObserver(() => {
+             if (bottomRef.current) {
+                bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+            }
+        });
+        observer.observe(scrollRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+	// FIXED: Calculate before conditionals to respect Rules of Hooks
+	const lastMsg = messages[messages.length - 1];
+	const canShowOptions = 
+		chatId === 'nico' &&
+		scriptReady && 
+		!gameState.isFinished && 
+		lastMsg && 
+		lastMsg.type === 'ai' && 
+		!lastMsg.isReaction;
+	
+	const currentNode = canShowOptions ? script[gameState.step] : null;
+	const rawOptions = currentNode?.options || [];
+	
+	// Deterministic shuffle: stable per step, random in practice, fixed in evaluation
+	const currentOptions = useMemo(() => {
+		if (rawOptions.length === 0) return [];
+		if (gameState.mode === 'evaluation') {
+			return rawOptions; // Fixed order in evaluation mode
+		}
+		return seededShuffle(rawOptions, gameState.step); // Stable shuffle per step
+	}, [rawOptions, gameState.step, gameState.mode]);
 
 	let showControls = false;
 	let controlsContent = null;
 
 	if (chatId === 'nico') {
-		const lastMsg = messages[messages.length - 1];
-		const showOptions = scriptReady && !gameState.isFinished && lastMsg && lastMsg.type === 'ai' && !lastMsg.isReaction;
-		const currentNode = scriptReady ? script[gameState.step] : null;
-		const rawOptions = showOptions && currentNode ? currentNode.options || [] : [];
-		
-		// Shuffle options to prevent memorization
-		const currentOptions = useMemo(() => {
-			if (rawOptions.length === 0) return [];
-			const shuffled = [...rawOptions];
-			for (let i = shuffled.length - 1; i > 0; i--) {
-				const j = Math.floor(Math.random() * (i + 1));
-				[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-			}
-			return shuffled;
-		}, [rawOptions.length, gameState.step]);
 		
 		showControls = true;
 		if (currentOptions.length > 0) {
 			controlsContent = React.createElement("div", { className: "wa-options-grid" },
 				currentOptions.map((opt, i) => 
 					React.createElement("button", { 
-						key: i, 
+						key: i,
+						role: "button",
+						"aria-pressed": false,
 						className: `wa-option-btn ${opt.style === 'truth' ? 'wa-btn-truth' : opt.style === 'myth' ? 'wa-btn-myth' : ''}`,
-						onClick: () => onOptionSelect(opt)
+						onClick: () => onOptionSelect(opt),
+						onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOptionSelect(opt); } }
 					}, opt.text)
 				)
 			);
@@ -1430,11 +1806,13 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 			controlsContent = React.createElement("div", { className: "wa-options-grid" },
 				React.createElement("button", { 
 					className: "wa-option-btn",
+					"aria-label": "Reintentar la simulación desde el inicio",
 					onClick: onReset,
 					style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold' }
 				}, React.createElement(RotateCcw, { size: 18 }), "Reintentar"),
 				React.createElement("button", { 
 					className: "wa-option-btn",
+					"aria-label": "Terminar la simulación",
 					onClick: onTerminate,
 					style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#0dc11cff' }
 				}, React.createElement(CheckCircle, { size: 18 }), "Terminar")
@@ -1480,8 +1858,8 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 				)
 			);
 		}
-		if (msg.type === 'image') return React.createElement("img", { src: msg.content, className: "wa-msg-image", alt: "Adjunto" });
-		if (msg.type === 'sticker') return React.createElement("img", { src: msg.content, className: "wa-sticker", alt: "Sticker" });
+		if (msg.type === 'image') return React.createElement("img", { src: msg.content, className: "wa-msg-image", alt: "Foto de corte en mano de Nico (simulada)" });
+		if (msg.type === 'sticker') return React.createElement("img", { src: msg.content, className: "wa-sticker", alt: "Sticker emocional" });
 		if (msg.type === 'audio') return React.createElement(AudioBubble, { 
 			src: msg.content, 
 			duration: msg.duration,
@@ -1507,7 +1885,7 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 				)
 			);
 		}
-		return React.createElement(Markdown, { components: ChatText }, msg.content);
+		return React.createElement(Markdown, { components: ChatText, remarkPlugins: [remarkGfm], skipHtml: true }, msg.content);
 	};
 
     return React.createElement("div", { className: "wa-chat-view" },
@@ -1542,7 +1920,8 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 					onNavigateHelp: onNavigate
 				})
             ),
-			isTyping && React.createElement(TypingBubble, null)
+			isTyping && React.createElement(TypingBubble, null),
+			React.createElement("div", { ref: bottomRef, style: { float: "left", clear: "both", height: "20px", width: "100%" } })
         ),
         showControls && React.createElement("div", { className: "wa-chat-input-area wa-game-controls" },
 			controlsContent

@@ -3,20 +3,27 @@
     "id": 1,
     "time": "08:12",
     "text": "Te cuento po, me corté la mano con una lámina en el taller. ¿Qué hago? 😰",
-    "media": { "type": "image", "content": "dist/assets/hand.jpg" },
     "topic": "diat",
+    "helpSection": "diat",
+    "requiresMastery": null,
+    "media": { "type": "image", "content": "dist/assets/hand.jpg" },
     "options": [
       {
         "text": "Avísale de inmediato a tu jefatura para que emita la DIAT y te acompaño al centro de la mutual/ISL.",
         "score": 2,
+        "maxScore": 2,
         "reaction": "¡Gracias, no sabía eso! Voy a buscar ayuda altiro.",
         "bossMessage": "✅ Bien hecho activando la DIAT dentro de 24 h y derivando al organismo administrador; así cumples la norma y aseguras atención inmediata.",
         "feedback": "✅ +2 pts. Activaste el proceso de denuncia y atención por el seguro laboral.",
+        "cause": "La denuncia temprana dentro de 24 hrs asegura calificación y cobertura según Ley 16.744.",
+        "recommendation": "Reporta TODO accidente de inmediato a jefatura o mutual/ISL para resguardar la salud del trabajador y cumplir la ley.",
+        "helpSection": "diat",
         "topic": "diat"
       },
       {
         "text": "Dejate la venda nomás y veamos si se te pasa.",
         "score": 0,
+        "maxScore": 2,
         "reaction": "¿Seguro? Es que sangra caleta…",
         "bossMessage": "❌ ¡Ojo! Ignorar un accidente grave puede traer sanciones y agravar la lesión.",
         "feedback": "❌ 0 pts. Minimizas el accidente y retrasas cobertura.",
@@ -28,6 +35,7 @@
       {
         "text": "Anda a tu ISAPRE/FONASA solo si es urgencia vital; después se deriva al organismo administrador (por ley usa red del OA).",
         "score": 1,
+        "maxScore": 2,
         "reaction": "¿Y no tengo que hacer algo más?",
         "bossMessage": "⚠️ En urgencia vital es excepcional, pero debe derivarse al OA. La ley exige red del organismo administrador.",
         "feedback": "🟡 +1 pt. Urgencia vital es excepcional y requiere posterior derivación al OA.",
@@ -43,10 +51,14 @@
     "time": "08:15",
     "text": "Mi jefa hoy no está. ¿Sin ella no se puede denunciar?",
     "topic": "diat",
+    "helpSection": "diat",
+    "requiresMastery": "diat",
+    "media": null,
     "options": [
       {
         "text": "Solo la empresa puede.",
         "score": 0,
+        "maxScore": 2,
         "reaction": "Pucha… entonces espero.",
         "bossMessage": "❌ ¡Error! Cualquier testigo o el mismo accidentado puede denunciar, no esperen por mí.",
         "feedback": "❌ 0 pts. La ley permite que otras personas denuncien también.",
@@ -58,6 +70,7 @@
       {
         "text": "Tú puedes hacer la DIAT y yo te ayudo; igual avisamos a la empresa.",
         "score": 2,
+        "maxScore": 2,
         "reaction": "¡Ya! Gracias por apoyarme.",
         "bossMessage": "✅ Excelente iniciativa. La autodenuncia asegura la atención oportuna.",
         "feedback": "✅ +2 pts. Empoderas al trabajador y das continuidad al proceso.",
@@ -66,6 +79,7 @@
       {
         "text": "Esperemos a mañana.",
         "score": 0,
+        "maxScore": 2,
         "reaction": "¿Y si se me infecta?",
         "bossMessage": "❌ ¡Jamás postergar! La denuncia debe ser dentro de las 24 horas ideales.",
         "feedback": "❌ 0 pts. Posponer es riesgoso y puede afectar cobertura.",
@@ -79,20 +93,28 @@
   {
     "id": 3,
     "time": "08:22",
-    "topic": "traslado",
     "text": "Me duele harto. ¿Voy en micro o pido ambulancia?",
+    "topic": "traslado",
+    "helpSection": "traslado",
+    "requiresMastery": null,
+    "media": null,
     "options": [
       {
         "text": "Si hay sangrado importante o mareo, pide traslado; si no, te llevo directo a la mutual/ISL.",
         "score": 2,
-        "topic": "traslado",
+        "maxScore": 2,
         "reaction": "¡Perfecto! Mejor no me la juego.",
         "bossMessage": "✅ Muy bien priorizando el traslado seguro. Los gastos de traslado son parte de la cobertura.",
-        "feedback": "✅ +2 pts. El traslado y sus gastos forman parte de las prestaciones médicas."
+        "feedback": "✅ +2 pts. El traslado y sus gastos forman parte de las prestaciones médicas.",
+        "cause": "El traslado seguro garantiza atención oportuna y es cubierto por la Ley 16.744.",
+        "recommendation": "Solicita traslado si hay signos de gravedad; los gastos son cubiertos por el seguro.",
+        "helpSection": "traslado",
+        "topic": "traslado"
       },
       {
         "text": "Pasa por tu casa a cambiarte y después vamos.",
         "score": 0,
+        "maxScore": 2,
         "topic": "traslado",
         "cause": "Retrasar la atención por temas no urgentes compromete la salud y puede agravar la lesión.",
         "recommendation": "En accidentes del trabajo, la prioridad es atención inmediata en el centro asignado.",
@@ -104,6 +126,7 @@
       {
         "text": "Anda a la clínica más cercana porque es más rápida.",
         "score": 1,
+        "maxScore": 2,
         "topic": "traslado",
         "cause": "Aunque es válido por urgencia vital, no es el camino óptimo si hay convenio.",
         "recommendation": "Siempre prioriza el centro con convenio del empleador (mutual/ISL) para evitar cobros adicionales.",
@@ -117,20 +140,28 @@
   {
     "id": 4,
     "time": "10:05",
-    "topic": "prestaciones",
     "text": "Me suturaron y me dieron indicaciones. ¿Esto lo pago yo? 💸",
+    "topic": "prestaciones",
+    "helpSection": "prestaciones-medicas",
+    "requiresMastery": null,
+    "media": null,
     "options": [
       {
         "text": "Están cubiertos procedimientos, medicamentos, curaciones y controles hasta tu alta.",
         "score": 2,
-        "topic": "prestaciones",
+        "maxScore": 2,
         "reaction": "¡Menos mal! Pensé que iba a salir caro.",
         "bossMessage": "✅ Correcto: las prestaciones médicas de la Ley 16.744 se otorgan gratuitamente hasta la curación o secuelas.",
-        "feedback": "✅ +2 pts. Cubre todo gratuitamente hasta recuperación o secuelas."
+        "feedback": "✅ +2 pts. Cubre todo gratuitamente hasta recuperación o secuelas.",
+        "cause": "La Ley 16.744 cubre íntegramente prestaciones médicas, medicamentos y procedimientos desde la DIAT.",
+        "recommendation": "Todas las prestaciones de salud se otorgan gratuitamente sin costo para el trabajador.",
+        "helpSection": "prestaciones-medicas",
+        "topic": "prestaciones"
       },
       {
         "text": "Solo la consulta; los medicamentos corren por tu cuenta.",
         "score": 0,
+        "maxScore": 2,
         "topic": "prestaciones",
         "cause": "La Ley 16.744 cubre íntegramente prestaciones médicas, medicamentos y procedimientos.",
         "recommendation": "Nunca debe el trabajador pagar por atención ni insumos en accidentes laborales.",
@@ -142,6 +173,7 @@
       {
         "text": "Solo si faltas al trabajo te cubren.",
         "score": 0,
+        "maxScore": 2,
         "topic": "prestaciones",
         "cause": "La cobertura de prestaciones médicas es independiente de si hay reposo o no.",
         "recommendation": "Todos los tratamientos están cubiertos desde la DIAT hasta el alta, con o sin licencia.",
@@ -155,20 +187,28 @@
   {
     "id": 5,
     "time": "10:15",
-    "topic": "subsidio",
     "text": "El doc dice que quizá no necesito reposo. ¿Pierdo beneficios?",
+    "topic": "subsidio",
+    "helpSection": "subsidio-incapacidad",
+    "requiresMastery": null,
+    "media": null,
     "options": [
       {
         "text": "Aunque no tengas reposo, igual tienes prestaciones médicas.",
         "score": 2,
-        "topic": "subsidio",
+        "maxScore": 2,
         "reaction": "¡Ah buena! Pensé que perdía todo.",
         "bossMessage": "✅ Exacto. Nico vuelve a trabajar pero sigue con tratamiento cubierto.",
-        "feedback": "✅ +2 pts. La cobertura médica se mantiene aunque no haya reposo."
+        "feedback": "✅ +2 pts. La cobertura médica se mantiene aunque no haya reposo.",
+        "cause": "Las prestaciones médicas son independientes del reposo; existe cobertura con o sin licencia.",
+        "recommendation": "Sin reposo mantienes prestaciones médicas cubierta, pero pierdes subsidio por incapacidad (que requiere licencia).",
+        "helpSection": "subsidio-incapacidad",
+        "topic": "subsidio"
       },
       {
         "text": "Sin licencia, pagas todo tú.",
         "score": 0,
+        "maxScore": 2,
         "topic": "subsidio",
         "cause": "Confundes subsidio (solo con reposo) con prestaciones médicas (siempre cubiertas).",
         "recommendation": "Las prestaciones médicas son independientes del reposo. El subsidio es aparte.",
@@ -180,6 +220,7 @@
       {
         "text": "Entonces no necesitas DIAT.",
         "score": 0,
+        "maxScore": 2,
         "topic": "diat",
         "cause": "La DIAT es obligatoria aunque no haya reposo; es para registrar y calificar el accidente.",
         "recommendation": "Siempre hacer DIAT dentro de 24 hrs, independiente del reposo médico.",
@@ -193,21 +234,28 @@
   {
     "id": 6,
     "time": "11:40",
-    "topic": "licencia",
     "text": "La secretaria dice que la empresa debe tramitar la licencia 5/6. Si no la reciben, ¿qué hago?",
+    "topic": "licencia",
+    "helpSection": "subsidio-incapacidad",
+    "requiresMastery": null,
     "media": { "type": "document", "content": "dist/assets/licencia_medica.pdf", "fileName": "Licencia_Medica_Nico.pdf", "pages": "1 pág • PDF", "thumbnail": "dist/assets/blur.jpg" },
     "options": [
       {
         "text": "La presentas directamente en el organismo administrador; si falta la DIAT, la hacemos.",
         "score": 2,
-        "topic": "licencia",
+        "maxScore": 2,
         "reaction": "¡Buena! No sabía que podía hacerlo directo.",
         "bossMessage": "✅ Si RR.HH. no recibe la licencia 5/6, la presentas directo al organismo. Recuerda plazos: empleador 3 días hábiles si la recibe; término por no presentación: 15 días en accidentes / 30 en enfermedades.",
-        "feedback": "✅ +2 pts. Bien resuelto. Si RRHH falla, el trabajador puede gestionar su licencia directo."
+        "feedback": "✅ +2 pts. Bien resuelto. Si RRHH falla, el trabajador puede gestionar su licencia directo.",
+        "cause": "El trabajador tiene derecho a gestionar su licencia directamente en el organismo si el empleador falla.",
+        "recommendation": "Presenta la licencia 5/6 directo al organismo administrador si la empresa no la recibe dentro de plazos.",
+        "helpSection": "subsidio-incapacidad",
+        "topic": "licencia"
       },
       {
         "text": "Llévala a la ISAPRE.",
         "score": 0,
+        "maxScore": 2,
         "topic": "licencia",
         "cause": "Las licencias por accidentes laborales deben tramitarse por el organismo administrador (mutual/ISL), no Isapre.",
         "recommendation": "Lleva la licencia 5/6 directamente al organismo administrador si la empresa no la gestiona.",
@@ -219,6 +267,7 @@
       {
         "text": "Espera a que la empresa vuelva.",
         "score": 0,
+        "maxScore": 2,
         "topic": "licencia",
         "cause": "Los plazos para presentar licencias son fatales (3 días hábiles desde recepción). Esperar puede perderlo.",
         "recommendation": "Si el empleador no puede, el trabajador presenta directo al organismo administrador.",
@@ -232,22 +281,30 @@
   {
     "id": 7,
     "time": "Martes, 08:55",
-    "topic": "pruebas",
     "text": "Voy camino a control. ¿Sirve que guarde fotos y el parte con las circunstancias?",
+    "topic": "pruebas",
+    "helpSection": "diat",
+    "requiresMastery": null,
+    "media": null,
     "options": [
       {
         "text": "Sí, guarda fotos, testigos y documentos; te ayudan a acreditar circunstancias y trayecto si aplica.",
         "score": 2,
-        "topic": "pruebas",
+        "maxScore": 2,
         "reaction": "¡Perfecto! Tomé fotos de todo.",
         "sticker": "dist/assets/sticker.png",
         "media": { "type": "image", "content": "dist/assets/blur.jpg" },
         "bossMessage": "✅ Super bien. Esos respaldos son claves si la mutual cuestiona el origen.",
-        "feedback": "✅ +2 pts. Super bien. Esos respaldos son claves si la mutual cuestiona el origen."
+        "feedback": "✅ +2 pts. Super bien. Esos respaldos son claves si la mutual cuestiona el origen.",
+        "cause": "Las pruebas documentan la circunstancia y protegen ante posibles rechazos de la mutual.",
+        "recommendation": "Siempre documente circunstancias: fotos, testimonio de testigos, parte de carabineros si aplica.",
+        "helpSection": "diat",
+        "topic": "pruebas"
       },
       {
         "text": "No hace falta, con la DIAT basta.",
         "score": 0,
+        "maxScore": 2,
         "topic": "pruebas",
         "cause": "Las pruebas (fotos, parte, testigos) son fundamentales para sustentar el caso ante posibles rechazos.",
         "recommendation": "Siempre documente circunstancias: fotos, testimonio de testigos, parte de carabineros si aplica.",
@@ -261,64 +318,98 @@
   {
     "id": 8,
     "time": "12:00",
+    "text": "Oye, estuve leyendo el manual que me pasaron y caché unos datos que en quizás tú no sabías. ¿Te pongo a prueba? 😎",
     "topic": "trivia",
-    "text": "Oye wn, estuve leyendo el manual que me pasaron y caché unos datos que en volá tú no sabíai. ¿Te pongo a prueba? 😎",
+    "helpSection": null,
+    "requiresMastery": null,
+    "media": null,
     "options": [
-      { "text": "¡Dale! Tira los datos a ver si sabís tanto. Jajaja", "score": 0, "topic": "trivia", "reaction": "Ya, prepárate que aquí te pillo fijo. ¡Vamos!" }
+      { 
+        "text": "¡Dale! Tira los datos a ver si sabes tanto. Jajaja", 
+        "score": 0, 
+        "maxScore": 2, 
+        "reaction": "Ya, prepárate que aquí te pillo fijo. ¡Vamos!",
+        "bossMessage": "Excelente, vamos con la primera.",
+        "feedback": "Iniciando trivia educativa.",
+        "cause": null,
+        "recommendation": null,
+        "helpSection": null,
+        "topic": "trivia"
+      }
     ]
   },
   {
     "id": 9,
     "time": "12:01",
+    "text": "1️⃣ ¿Sabías que si vas de la pega a la casa y te desvías a comprar pan, te sigue cubriendo el seguro de trayecto?",
     "topic": "trayecto",
-    "text": "1️⃣ ¿Sabíai que si vai de la pega a la casa y te desviai a comprar pan, te sigue cubriendo el seguro de trayecto?",
+    "helpSection": "trayecto",
+    "requiresMastery": null,
+    "media": null,
     "options": [
       {
-        "text": "¡Ooh que buen dato wn! No tenía idea. 👍",
-        "score": 0,
-        "topic": "trayecto",
-        "style": "truth",
-        "cause": "Confundes el trayecto directo con cualquier parada personal; los desvíos rompen la cobertura.",
-        "recommendation": "El trayecto debe ser directo sin interrupciones por motivos personales. Excepción SUSESO: necesidad objetiva habitual (dejar hijxs).",
-        "helpSection": "trayecto",
-        "reaction": "❌ ¡Puta el weón! Te cuentié pesao' JKSADKA. El trayecto tiene que ser directo, sin desvíos personales cagaste con el seguro. Excepción SUSESO: interrupción habitual por necesidad objetiva (ej. dejar hijxs) puede no romper nexo.",
-        "feedback": "❌ 0 pts. El desvío por motivos personales interrumpe la cobertura de trayecto."
-      },
+        "text": "¡Ooh qué buen dato! No tenía idea. 👍",
+      "score": 0,
+      "maxScore": 2,
+      "reaction": "❌ ¡Chuta! Te cuentié pesado. El trayecto debe ser directo; si hay desvío personal se rompe la cobertura. Excepción SUSESO: una interrupción habitual por **necesidad objetiva** (p. ej., dejar a hijas o hijos) puede no romper el nexo.",
+      "bossMessage": "❌ Falso. El trayecto debe ser directo.",
+      "feedback": "❌ 0 pts. El desvío por motivos personales interrumpe la cobertura de trayecto.",
+      "style": "truth",
+      "cause": "Se confunde trayecto directo con paradas personales; los desvíos cortan el nexo laboral.",
+      "recommendation": "Mantén un trayecto directo y documenta si corresponde una interrupción habitual por necesidad objetiva (criterio SUSESO).",
+      "helpSection": "trayecto",
+      "topic": "trayecto"
+    },
       {
-        "text": "Chamullento ql, aonde la viste. Esa es mula. 👎",
-        "score": 2,
-        "topic": "trayecto",
-        "style": "myth",
-        "reaction": "✅ ¡Buena! Estái vivo. Es chamullo: el trayecto debe ser directo y sin desvíos personales. Excepción: interrupción habitual por necesidad objetiva (ej. dejar hijxs) puede no romper el nexo por jurisprudencia SUSESO.",
-        "feedback": "✅ +2 pts. El trayecto debe ser directo y no interrumpido por fines personales."
-      }
+      "text": "¡Chamullento! ¿Dónde la viste? Esa es mula. 👎",
+      "score": 2,
+      "maxScore": 2,
+      "reaction": "✅ ¡Buena! Es chamullo: el trayecto debe ser directo y sin desvíos personales. Excepción: interrupción habitual por necesidad objetiva (p. ej., dejar a hijas o hijos) puede no romper el nexo, según criterio SUSESO.",
+      "bossMessage": "✅ Correcto. El trayecto debe ser directo, sin desvíos personales.",
+      "feedback": "✅ +2 pts. El trayecto debe ser directo y no interrumpido por fines personales.",
+      "style": "myth",
+      "cause": "El requisito de trayecto directo es esencial; un desvío personal corta la cobertura.",
+      "recommendation": "Si existe una necesidad objetiva habitual, justifícala y documéntala (p. ej., dejar a hijas o hijos).",
+      "helpSection": "trayecto",
+      "topic": "trayecto"
+    }
     ]
   },
   {
-    "id": 10,
-    "time": "12:02",
-    "topic": "prestaciones",
-    "text": "2️⃣ ¿Y esta? En la Mutual tengo que pagar la atención de urgencia y después pedir el reembolso con la boleta.",
-    "options": [
-      {
-        "text": "Claro, como en la farmacia. Verdad. 👍",
-        "score": 0,
-        "topic": "prestaciones",
-        "style": "truth",
-        "cause": "Confundes la Ley 16.744 con seguros privados; la Ley 16.744 es 100% gratuita sin copagos.",
-        "recommendation": "Nunca debes pagar en el momento. Si alguien te cobra, reclama al organismo administrador.",
-        "helpSection": "prestaciones-medicas",
-        "reaction": "❌ ¡Te volví a pillar! JSDKFJS. El seguro es gratuito, no tení que sacar ni una gamba del bolsillo.",
-        "feedback": "❌ 0 pts. La Ley 16.744 no contempla copagos ni reembolsos; es gratuita."
-      },
-      {
-        "text": "¡La mansa mentira hno! No se paga ni un peso. 👎",
-        "score": 2,
-        "topic": "prestaciones",
-        "style": "myth",
-        "reaction": "✅ ¡Eso! La tení clarita. Todo el tratamiento, hasta los remedios, son gratis.",
-        "feedback": "✅ +2 pts. Cobertura total sin costo para el trabajador."
-      }
-    ]
-  }
+  "id": 10,
+  "time": "12:02",
+  "text": "2️⃣ En la mutual tengo que pagar la atención de urgencia y después pedir el reembolso con la boleta.",
+  "topic": "prestaciones",
+  "helpSection": "prestaciones-medicas",
+  "requiresMastery": null,
+  "media": null,
+  "options": [
+    {
+      "text": "Claro, como en la farmacia. Verdad. 👍",
+      "score": 0,
+      "maxScore": 2,
+      "reaction": "❌ ¡Te volví a pillar! El seguro se otorga gratuitamente; no tienes que pagar de tu bolsillo.",
+      "bossMessage": "❌ Falso. Las prestaciones se otorgan gratuitamente.",
+      "feedback": "❌ 0 pts. La Ley 16.744 no contempla copagos ni reembolsos para la persona trabajadora.",
+      "style": "truth",
+      "cause": "Se confunde la Ley 16.744 con seguros privados: aquí no hay copagos ni reembolsos.",
+      "recommendation": "No debes pagar al momento. Si te cobran, solicita derivación al organismo administrador y reclama.",
+      "helpSection": "prestaciones-medicas",
+      "topic": "prestaciones"
+    },
+    {
+      "text": "¡La mansa mentira! No se paga ni un peso. 👎",
+      "score": 2,
+      "maxScore": 2,
+      "reaction": "✅ ¡Eso! Todo el tratamiento, incluidos medicamentos, se otorga gratuitamente por el organismo administrador.",
+      "bossMessage": "✅ Exacto. Las prestaciones se otorgan gratuitamente por el organismo administrador.",
+      "feedback": "✅ +2 pts. Cobertura sin costo para la persona trabajadora.",
+      "style": "myth",
+      "cause": "Las prestaciones médicas de la Ley 16.744 se otorgan sin copagos ni reembolsos.",
+      "recommendation": "Ante dudas, revisa el glosario ‘Prestaciones médicas’ y pide derivación al centro en convenio.",
+      "helpSection": "prestaciones-medicas",
+      "topic": "prestaciones"
+    }
+  ]
+}
 ]
