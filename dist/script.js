@@ -1400,7 +1400,7 @@ function WhatsAppSimulator() {
 				const currentNode = script[gameState.step];
 				const requiresMastery = currentNode.requiresMastery; // e.g., "diat" topic
 				
-				if (requiresMastery && isPracticeMode) {
+				if (false && requiresMastery && isPracticeMode) {
 					// Check if user has mastered the required topic
 					const hasMastery = checkTopicMastery(gameState.topicScores, requiresMastery);
 					const masteryPercent = getTopicMastery(gameState.topicScores, requiresMastery);
