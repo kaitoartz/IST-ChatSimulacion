@@ -53,9 +53,68 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+class GlobalErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, errorInfo: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        this.setState({ error, errorInfo });
+        console.error("Uncaught Error:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return React.createElement("div", { 
+                style: { 
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100vh',
+                    backgroundColor: '#fff',
+                    color: '#e53e3e',
+                    padding: '24px',
+                    zIndex: 99999,
+                    overflow: 'auto',
+                    fontFamily: 'system-ui, sans-serif',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center'
+                } 
+            },
+                React.createElement("div", { style: { fontSize: '48px', marginBottom: '16px' } }, "🤕"),
+                React.createElement("h2", { style: { fontSize: '24px', marginBottom: '12px', color: '#1a202c' } }, "¡Auch! Algo se rompió"),
+                React.createElement("p", { style: { color: '#4a5568', marginBottom: '24px' } }, "Ocurrió un error inesperado en la simulación."),
+                
+                React.createElement("div", { style: { background: '#fef2f2', padding: '16px', borderRadius: '8px', border: '1px solid #fee2e2', width: '100%', maxWidth: '600px', textAlign: 'left', overflowX: 'auto' } },
+                    React.createElement("strong", { style: { display: 'block', marginBottom: '8px', color: '#991b1b' } }, this.state.error && this.state.error.toString()),
+                    React.createElement("pre", { style: { fontSize: '11px', color: '#7f1d1d', marginTop: '8px' } }, 
+                        this.state.errorInfo && this.state.errorInfo.componentStack
+                    )
+                ),
+                React.createElement("button", { 
+                    onClick: () => window.location.reload(),
+                    style: { marginTop: '32px', padding: '12px 24px', background: '#0073ffff', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }
+                }, "🔄 Reiniciar Aplicación")
+            );
+        }
+        return this.props.children;
+    }
+}
+
 createRoot(document.getElementById("root")).render(
     React.createElement(StrictMode, null, 
-        React.createElement(WhatsAppSimulator, null)
+        React.createElement(GlobalErrorBoundary, null,
+            React.createElement(WhatsAppSimulator, null)
+        )
     )
 );
 
