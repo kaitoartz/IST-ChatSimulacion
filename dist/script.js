@@ -1686,16 +1686,21 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
     useEffect(() => {
         const scrollToBottom = () => {
              if (bottomRef.current) {
+                // Force scroll to bottom
                 bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
             }
         };
 
-		// 1. Immediate scroll attempt
-		scrollToBottom();
-        
-        // 2. Delayed scroll for any layout shifts
-		const timer = setTimeout(scrollToBottom, 400); 
-        return () => clearTimeout(timer);
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+            scrollToBottom();
+            
+            // Multiple validation passes for images/animations
+            setTimeout(scrollToBottom, 100);
+            setTimeout(scrollToBottom, 300);
+            setTimeout(scrollToBottom, 600);
+        });
+
     }, [messages, gameState.step, isTyping]);
 
     // Scroll on Container Resize (e.g. Controls appearing)

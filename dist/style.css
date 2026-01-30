@@ -588,6 +588,11 @@ body {
 	line-height: 1.4;
 }
 
+/* Ensure smooth scrolling capability */
+.wa-chat-bg {
+	scroll-behavior: smooth;
+}
+
 .wa-bubble {
 	max-width: 75%;
 	padding: 6px 7px 8px 9px;
@@ -1254,4 +1259,48 @@ body {
   font-size: 14px;
   color: #333;
   line-height: 1.3;
+}
+/* --- MOBILE IMMERSION --- */
+@media (max-width: 768px) {
+    .phone-wrapper {
+        align-items: flex-start;
+        height: 100vh;
+        height: 100dvh;
+        background: #fff;
+    }
+
+    .phone-frame {
+        width: 100% !important;
+        height: 100% !important;
+        height: 100dvh !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    /* Hide the fake notch on real phones to avoid double notch */
+    .phone-frame .phone-notch {
+        display: none !important;
+    }
+    
+    /* Adjust Status Bar if needed, or keeping it as 'app header' */
+    .phone-frame .status-bar {
+        border-radius: 0;
+        top: 0;
+    }
+
+    /* Adjust Home Indicator */
+    .phone-frame .home-indicator {
+        bottom: 8px;
+    }
+
+    /* Ensure modals/overlays are full screen too */
+    .mode-overlay, .splash-screen {
+        border-radius: 0;
+    }
+    
+    /* Adjust Progress Bar position since status bar might feel different */
+    .progress-bar-container {
+        top: 104px; /* Keep same relative position */
+    }
 }
