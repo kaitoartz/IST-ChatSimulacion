@@ -1339,6 +1339,162 @@ body {
     gap: 4px;
 }
 
+.wa-tag-context, .wa-tag-answer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+    font-size: 13.5px;
+}
+
+.wa-tag-label {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    width: fit-content;
+    color: white;
+}
+
+.wa-tag-label.ctx { background-color: #795548; } /* Brown for Context */
+.wa-tag-label.ans { background-color: #607d8b; } /* Blue Grey for Answer */
+
+.wa-tag-text {
+    background: rgba(255, 255, 255, 0.4);
+    padding: 6px 8px;
+    border-radius: 6px;
+    display: block;
+    color: #333;
+}
+
+/* --- WELCOME SCREEN --- */
+.welcome-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20000;
+    background: linear-gradient(135deg, #4f0b7b 0%, #3a085c 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    overflow: hidden;
+}
+
+.welcome-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    gap: 15px;
+    width: 100%;
+    animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative;
+    z-index: 2;
+}
+
+.welcome-logo {
+    width: 140px;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+    animation: floatLogo 6s ease-in-out infinite;
+}
+
+.welcome-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #ef950a; /* IST Gold/Orange */
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.welcome-subtitle {
+    font-size: 16px;
+    font-weight: 500;
+    color: #35bad1; /* IST Cyan */
+    margin: 0;
+    line-height: 1.5;
+    max-width: 85%;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.welcome-btn {
+    margin-top: 40px;
+    background: #cb348c; /* IST Magenta */
+    color: white;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(203, 52, 140, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(203, 52, 140, 0.6);
+    background: #d8459b;
+}
+
+.welcome-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(203, 52, 140, 0.4);
+}
+
+/* Decorative Background Elements */
+.welcome-orb-1 {
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: #ef950a;
+    opacity: 0.1;
+    filter: blur(40px);
+    animation: pulseOrb 8s infinite alternate;
+}
+
+.welcome-orb-2 {
+    position: absolute;
+    bottom: -80px;
+    left: -80px;
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    background: #35bad1;
+    opacity: 0.1;
+    filter: blur(50px);
+    animation: pulseOrb 10s infinite alternate-reverse;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatLogo {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes pulseOrb {
+    0% { transform: scale(1); opacity: 0.1; }
+    100% { transform: scale(1.2); opacity: 0.2; }
+}
+
 /* --- MOBILE IMMERSION --- */
 @media (max-width: 768px) {
     .phone-wrapper {

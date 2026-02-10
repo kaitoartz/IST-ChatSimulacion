@@ -707,6 +707,19 @@ function ModeSelector({ onSelectMode }) {
 	);
 }
 
+function WelcomeScreen({ onStart }) {
+    return React.createElement("div", { className: "welcome-screen" },
+        React.createElement("div", { className: "welcome-orb-1" }),
+        React.createElement("div", { className: "welcome-orb-2" }),
+        React.createElement("div", { className: "welcome-content" },
+            React.createElement("img", { src: "dist/assets/logo.png", className: "welcome-logo", alt: "IST Educa" }),
+            React.createElement("h1", { className: "welcome-title" }, "Módulo 5"),
+            React.createElement("h2", { className: "welcome-subtitle" }, "Prestaciones médicas y económicas de la ley 16.744"),
+            React.createElement("button", { className: "welcome-btn", onClick: onStart }, "COMENZAR")
+        )
+    );
+}
+
 function RemediationCard({ topic, onClose }) {
 	const content = remediationContent[topic];
 	if (!content) return null;
@@ -917,6 +930,7 @@ function WhatsAppSimulator() {
 	const [scriptData, setScriptData] = useState([]);
 	const [errorsByTopic, setErrorsByTopic] = useState({});
 	const [showRemediation, setShowRemediation] = useState(null);
+    const [showWelcome, setShowWelcome] = useState(true);
 
 	const [callOpen, setCallOpen] = useState(false);
     const [nicoStarted, setNicoStarted] = useState(false); // Start Flow flag
@@ -1337,7 +1351,11 @@ function WhatsAppSimulator() {
 					const contextMsg = {
 						id: (Date.now() + 5).toString(),
 						type: "system",
-						content: `❓ Contexto: "${script[gameState.step].text}"`,
+						content: "Contexto del error",
+                        contextDetails: {
+                            question: script[gameState.step].text,
+                            answer: option.text
+                        },
 						timestamp: "Ahora"
 					};
 					addMessage("jefe", contextMsg);
@@ -1685,8 +1703,13 @@ function WhatsAppSimulator() {
                 }),
             React.createElement("div", { className: "home-indicator" }),
 
+			// Welcome Screen
+            !loading && showWelcome && React.createElement(WelcomeScreen, { 
+                onStart: () => setShowWelcome(false) 
+            }),
+
 			// Mode Selector (Moved inside phone frame)
-			!loading && !gameState.mode && React.createElement(ModeSelector, {
+			!loading && !showWelcome && !gameState.mode && React.createElement(ModeSelector, {
 				onSelectMode: (mode) => {
 					dispatchGame({ type: "SET_MODE", value: mode });
 					dispatchGame({ type: "SET_STATUS", value: "ready" });
@@ -1868,6 +1891,19 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 	}
 
 	const renderMessageContent = (msg) => {
+        if (msg.type === 'system' && msg.contextDetails) {
+            return React.createElement("div", { className: "wa-system-rich" },
+                React.createElement("div", { className: "wa-tag-context" },
+                    React.createElement("span", { className: "wa-tag-label ctx" }, "EN CONTEXTO DE..."),
+                    React.createElement("span", { className: "wa-tag-text" }, msg.contextDetails.question)
+                ),
+                React.createElement("div", { className: "wa-tag-answer" },
+                    React.createElement("span", { className: "wa-tag-label ans" }, "TU RESPUESTA"),
+                    React.createElement("span", { className: "wa-tag-text" }, msg.contextDetails.answer)
+                )
+            );
+        }
+
         if (msg.type === 'system' && msg.feedbackDetails) {
             return React.createElement("div", { className: "wa-system-rich" },
                 msg.feedbackDetails.earned === 0 && msg.feedbackDetails.cause ? 
