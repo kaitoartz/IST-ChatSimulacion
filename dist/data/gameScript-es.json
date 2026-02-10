@@ -9,14 +9,14 @@
     "media": { "type": "image", "content": "dist/assets/hand.jpg" },
     "options": [
       {
-        "text": "Avísale de inmediato a tu jefatura para que emita la DIAT y te acompaño al centro de la mutual/ISL.",
+        "text": "Avísale de inmediato a tu jefatura para que emita la DIAT y te acompaño al centro de la IST/ISL.",
         "score": 2,
         "maxScore": 2,
         "reaction": "¡Gracias, no sabía eso! Voy a buscar ayuda altiro.",
         "bossMessage": "✅ Bien hecho activando la DIAT dentro de 24 h y derivando al organismo administrador; así cumples la norma y aseguras atención inmediata.",
         "feedback": "✅ +2 pts. Activaste el proceso de denuncia y atención por el seguro laboral.",
         "cause": "La denuncia temprana dentro de 24 hrs asegura calificación y cobertura según Ley 16.744.",
-        "recommendation": "Reporta TODO accidente de inmediato a jefatura o mutual/ISL para resguardar la salud del trabajador y cumplir la ley.",
+        "recommendation": "Reporta TODO accidente de inmediato a jefatura o IST/ISL para resguardar la salud del trabajador y cumplir la ley.",
         "helpSection": "diat",
         "topic": "diat"
       },
@@ -28,7 +28,7 @@
         "bossMessage": "❌ ¡Ojo! Ignorar un accidente grave puede traer sanciones y agravar la lesión.",
         "feedback": "❌ 0 pts. Minimizas el accidente y retrasas cobertura.",
         "cause": "No se activó la denuncia legal dentro del plazo de 24 hrs ni se aseguró cobertura por Ley 16.744.",
-        "recommendation": "Reporta TODO accidente de inmediato a jefatura o mutual/ISL para resguardar la salud del trabajador y cumplir la ley.",
+        "recommendation": "Reporta TODO accidente de inmediato a jefatura o IST/ISL para resguardar la salud del trabajador y cumplir la ley.",
         "helpSection": "ayuda-4",
         "topic": "diat"
       },
@@ -63,7 +63,7 @@
         "bossMessage": "❌ ¡Error! Cualquier testigo o el mismo accidentado puede denunciar, no esperen por mí.",
         "feedback": "❌ 0 pts. La ley permite que otras personas denuncien también.",
         "cause": "Se asume que solo el empleador puede denunciar, pero la Ley 16.744 autoriza al trabajador, testigos, médico o CPHS.",
-        "recommendation": "Realiza o apoya la autodenuncia directamente en el organismo administrador (mutual/ISL) sin esperar al empleador.",
+        "recommendation": "Realiza o apoya la autodenuncia directamente en el organismo administrador (IST/ISL) sin esperar al empleador.",
         "helpSection": "ayuda-4",
         "topic": "diat"
       },
@@ -100,7 +100,7 @@
     "media": null,
     "options": [
       {
-        "text": "Si hay sangrado importante o mareo, pide traslado; si no, te llevo directo a la mutual/ISL.",
+        "text": "Si hay sangrado importante o mareo, pide traslado; si no, te llevo directo a la IST/ISL.",
         "score": 2,
         "maxScore": 2,
         "reaction": "¡Perfecto! Mejor no me la juego.",
@@ -129,7 +129,7 @@
         "maxScore": 2,
         "topic": "traslado",
         "cause": "Aunque es válido por urgencia vital, no es el camino óptimo si hay convenio.",
-        "recommendation": "Siempre prioriza el centro con convenio del empleador (mutual/ISL) para evitar cobros adicionales.",
+        "recommendation": "Siempre prioriza el centro con convenio del empleador (IST/ISL) para evitar cobros adicionales.",
         "helpSection": "organismo-administrador",
         "reaction": "No sabía que podía…",
         "bossMessage": "⚠️ Sirve por Ley de Urgencia, pero idealmente va directo al convenio para no pagar extra.",
@@ -257,7 +257,7 @@
         "score": 0,
         "maxScore": 2,
         "topic": "licencia",
-        "cause": "Las licencias por accidentes laborales deben tramitarse por el organismo administrador (mutual/ISL), no Isapre.",
+        "cause": "Las licencias por accidentes laborales deben tramitarse por el organismo administrador (IST/ISL), no Isapre.",
         "recommendation": "Lleva la licencia 5/6 directamente al organismo administrador si la empresa no la gestiona.",
         "helpSection": "subsidio-incapacidad",
         "reaction": "Pero si es laboral…",
@@ -294,9 +294,9 @@
         "reaction": "¡Perfecto! Tomé fotos de todo.",
         "sticker": "dist/assets/sticker.png",
         "media": { "type": "image", "content": "dist/assets/blur.jpg" },
-        "bossMessage": "✅ Super bien. Esos respaldos son claves si la mutual cuestiona el origen.",
-        "feedback": "✅ +2 pts. Super bien. Esos respaldos son claves si la mutual cuestiona el origen.",
-        "cause": "Las pruebas documentan la circunstancia y protegen ante posibles rechazos de la mutual.",
+        "bossMessage": "✅ Super bien. Esos respaldos son claves si la IST/ISL cuestiona el origen.",
+        "feedback": "✅ +2 pts. Super bien. Esos respaldos son claves si la IST/ISL cuestiona el origen.",
+        "cause": "Las pruebas documentan la circunstancia y protegen ante posibles rechazos de la IST/ISL.",
         "recommendation": "Siempre documente circunstancias: fotos, testimonio de testigos, parte de carabineros si aplica.",
         "helpSection": "diat",
         "topic": "pruebas"
@@ -378,7 +378,7 @@
   {
   "id": 10,
   "time": "12:02",
-  "text": "2️⃣ En la mutual tengo que pagar la atención de urgencia y después pedir el reembolso con la boleta.",
+  "text": "2️⃣ En la IST/ISL tengo que pagar la atención de urgencia y después pedir el reembolso con la boleta.",
   "topic": "prestaciones",
   "helpSection": "prestaciones-medicas",
   "requiresMastery": null,

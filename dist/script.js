@@ -1089,9 +1089,9 @@ function WhatsAppSimulator() {
 		eval: [],
 		ayuda: [
 			{ id: "ayuda-1", type: "ai", content: "¡Hola! 👋 Soy tu asistente de información sobre la **Ley 16.744**.", timestamp: "09:00" },
-			{ id: "ayuda-2", sectionId: "diat", type: "ai", content: "📋 **¿Qué es la DIAT?**\n\nDenuncia wIndividual de Accidente del Trabajo: debe hacerse dentro de las **24 horas** desde que se conoce el accidente. La hace el empleador; también pueden denunciar la trabajadora, testigos, médico tratante o CPHS. Si el empleador no la hace, puedes denunciar directamente en el organismo administrador (IST/ISL).", timestamp: "09:00" },
+			{ id: "ayuda-2", sectionId: "diat", type: "ai", content: "📋 **¿Qué es la DIAT?**\n\nDenuncia Individual de Accidente del Trabajo: debe hacerse dentro de las **24 horas** desde que se conoce el accidente. La hace el empleador; también pueden denunciar la trabajadora, testigos, médico tratante o CPHS. Si el empleador no la hace, puedes denunciar directamente en el organismo administrador (IST/ISL).", timestamp: "09:00" },
 			{ id: "ayuda-3", sectionId: "prestaciones-medicas", type: "ai", content: "🏥 **Cobertura de prestaciones:**\n\n• Atención médica de urgencia\n• Hospitalización\n• Medicamentos y tratamientos\n• Rehabilitación\n• Prótesis y aparatos ortopédicos\n\n✅ Se otorgan gratuitamente a cargo del organismo administrador, sin copagos ni reembolsos.", timestamp: "09:01" },
-			{ id: "ayuda-4", sectionId: "organismo-administrador", type: "ai", content: "🏢 **Organismo Administrador:**\n\nEs la mutual o ISL donde tu empresa tiene contrato. En urgencias vitales (excepcional), cualquier centro puede atender con posterior derivación obligatoria al OA para continuidad de atención.", timestamp: "09:02" },
+			{ id: "ayuda-4", sectionId: "organismo-administrador", type: "ai", content: "🏢 **Organismo Administrador:**\n\nEs IST o ISL donde tu empresa tiene contrato. En urgencias vitales (excepcional), cualquier centro puede atender con posterior derivación obligatoria al OA para continuidad de atención.", timestamp: "09:02" },
 			{ id: "ayuda-5", sectionId: "trayecto", type: "ai", content: "🚗 **Accidente de trayecto:**\n\nSe cubre el trayecto **directo**, habitual y sin desvíos personales entre:\n• Casa ↔ Trabajo\n• Trabajo ↔ Lugar donde recibes remuneración\n\n📸 **Medios de prueba:** parte, fotos, testigos, documentos\n⚠️ Desvío personal rompe cobertura; excepción: interrupción habitual por necesidad objetiva (SUSESO).", timestamp: "09:03" },
 			{ id: "ayuda-6", sectionId: "subsidio-incapacidad", type: "ai", content: "💰 **Subsidios e ingresos (D.S. 109):**\n\nSi quedas con incapacidad temporal, recibes:\n• Continuidad de ingresos durante tratamiento (conforme D.S. 109)\n• Subsidio por incapacidad laboral (si hay licencia médica)\n• Pensión si queda incapacidad permanente\n\n✅ Las prestaciones médicas se otorgan gratuitamente independientemente de licencia; subsidio aplica solo con reposo.", timestamp: "09:04" },
 			{ id: "ayuda-7", type: "ai", content: "📞 **¿Necesitas más ayuda?**\n\nPuedes contactar a:\n• IST o ISL\n• Dirección del Trabajo\n• Superintendencia de Seguridad Social\n\n¡Siempre estoy aquí para ayudarte! 💜", timestamp: "09:05" }
@@ -1414,7 +1414,13 @@ function WhatsAppSimulator() {
 					type: "system",
 					content: feedbackContent,
 					timestamp: "System",
-					helpSection: isPracticeMode ? option.helpSection : null
+					helpSection: isPracticeMode ? option.helpSection : null,
+                    feedbackDetails: isPracticeMode ? {
+                        earned: earnedScore,
+                        score: newScore,
+                        cause: earnedScore === 0 ? option.cause : null,
+                        hint: earnedScore === 0 ? option.recommendation : null
+                    } : null
 				};
 				addMessage("nico", feedbackMsg);
 
@@ -1862,6 +1868,29 @@ function ChatInterface({ chatId, chatName, avatarType, onBack, messages, gameSta
 	}
 
 	const renderMessageContent = (msg) => {
+        if (msg.type === 'system' && msg.feedbackDetails) {
+            return React.createElement("div", { className: "wa-system-rich" },
+                msg.feedbackDetails.earned === 0 && msg.feedbackDetails.cause ? 
+                    React.createElement(React.Fragment, null,
+                        React.createElement("div", { className: "wa-sys-header fail" }, "❌ Incorrecto"),
+                        React.createElement("div", { className: "wa-sys-section" },
+                            React.createElement("strong", null, "Por qué:"),
+                            React.createElement("p", { style: { margin: 0 } }, msg.feedbackDetails.cause)
+                        ),
+                        msg.feedbackDetails.hint && React.createElement("div", { className: "wa-sys-section hint" },
+                            React.createElement("strong", null, "💡 Pista:"),
+                            React.createElement("p", { style: { margin: 0 } }, msg.feedbackDetails.hint)
+                        )
+                    ) 
+                    : React.createElement("div", { className: "wa-sys-header success" }, "✅ Respuesta registrada"),
+                
+                React.createElement("div", { className: "wa-sys-score" },
+                    React.createElement("span", null, "Puntaje actual:"),
+                    React.createElement("span", { style: { color: '#333' } }, `${msg.feedbackDetails.score} pts`)
+                )
+            );
+        }
+
 		if (msg.type === 'document') {
             if (msg.thumbnail) {
                  return React.createElement("div", { className: "wa-document-bubble", style: { padding: 0, display: 'flex', flexDirection: 'column' } },
