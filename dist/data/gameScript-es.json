@@ -100,14 +100,14 @@
     "media": null,
     "options": [
       {
-        "text": "Si hay sangrado importante o mareo, pide traslado; si no, te llevo directo a la IST/ISL.",
+        "text": "Si hay sangrado importante o mareo, pide traslado. Si no yo te llevo directo al IST",
         "score": 2,
         "maxScore": 2,
         "reaction": "¡Perfecto! Mejor no me la juego.",
         "bossMessage": "✅ Muy bien priorizando el traslado seguro. Los gastos de traslado son parte de la cobertura.",
         "feedback": "✅ +2 pts. El traslado y sus gastos forman parte de las prestaciones médicas.",
         "cause": "El traslado seguro garantiza atención oportuna y es cubierto por la Ley 16.744.",
-        "recommendation": "Solicita traslado si hay signos de gravedad; los gastos son cubiertos por el seguro.",
+        "recommendation": "Solicita traslado si hay signos de gravedad. Los gastos son cubiertos por el seguro.",
         "helpSection": "traslado",
         "topic": "traslado"
       },
