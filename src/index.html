@@ -1,1 +1,591 @@
-<div id="root"></div>
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>KAITOARTZ // VR Developer &amp; Tech Artist Portfolio</title>
+<meta content="Portfolio de KAITOARTZ - Desarrollador VR/AR especializado en experiencias inmersivas, shaders procedurales y visualización en tiempo real." name="description"/>
+<meta content="VR Developer, AR Developer, Unity Developer, Virtual Reality, Augmented Reality, 3D Artist, Shader Programming, WebGL, Tech Art, Immersive Experiences, KAITOARTZ" name="keywords"/>
+<meta content="KAITOARTZ" name="author"/>
+<meta content="index, follow" name="robots"/>
+<meta content="website" property="og:type"/>
+<meta content="https://kaitoartz.github.io/" property="og:url"/>
+<meta content="KAITOARTZ - VR Developer &amp; Tech Artist" property="og:title"/>
+<meta content="Portfolio cyberpunk de desarrollador VR/AR. Experiencias inmersivas, shaders y visualización en tiempo real." property="og:description"/>
+<meta content="assets/projects/crehabitat.webp" property="og:image"/>
+<meta content="KAITOARTZ Portfolio" property="og:site_name"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="https://kaitoartz.github.io/" name="twitter:url"/>
+<meta content="KAITOARTZ - VR Developer &amp; Tech Artist" name="twitter:title"/>
+<meta content="Portfolio cyberpunk de desarrollador VR/AR. Experiencias inmersivas, shaders y visualización en tiempo real." name="twitter:description"/>
+<meta content="assets/projects/crehabitat.webp" name="twitter:image"/>
+<link href="favicon.ico" rel="icon" type="image/x-icon"/>
+<meta content="#0a0a0a" name="theme-color"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&amp;family=Rajdhani:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+        :root {
+            --bg-dark: #050505;
+            --bg-panel: #0f1115;
+            --bg-tactical: #16181c;
+            --accent-primary: #e2ff00;--accent-secondary: #ff3300;--accent-tertiary: #00f0ff;--text-main: #e0e0e0;
+            --text-dim: #6b7280;
+            --grid-line: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --caution-stripe: repeating-linear-gradient(
+                45deg,
+                #1a1a1a,
+                #1a1a1a 10px,
+                #222 10px,
+                #222 20px
+            );
+            --carbon-fiber: radial-gradient(black 15%, transparent 16%) 0 0, radial-gradient(black 15%, transparent 16%) 8px 8px, radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 0 1px, radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 8px 9px;
+            --carbon-bg: #111;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.95)),
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231f2937' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }.tactical-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1rem;
+            padding: 1rem;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            backdrop-filter: blur(10px);
+            clip-path: polygon(
+                0 0, 
+                100% 0, 
+                100% calc(100% - 20px), 
+                calc(100% - 20px) 100%, 
+                0 100%
+            );
+        }
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 20px 20px,
+                linear-gradient(0deg, var(--grid-line) 1px, transparent 1px) 0 0 / 20px 20px;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .panel::after {
+            content: '';
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 20px; height: 20px;
+            background: var(--accent-primary);
+            clip-path: polygon(100% 0, 0% 100%, 100% 100%);
+            z-index: 10;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.02);
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+        }.glitch-text {
+            position: relative;
+        }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+        .glitch-text::before {
+            left: 2px; text-shadow: -1px 0 #ff00c1; clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px; text-shadow: -1px 0 #00fff9; clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(10px, 9999px, 30px, 0); }
+            20% { clip: rect(60px, 9999px, 80px, 0); }
+            40% { clip: rect(20px, 9999px, 60px, 0); }
+            60% { clip: rect(80px, 9999px, 5px, 0); }
+            80% { clip: rect(30px, 9999px, 70px, 0); }
+            100% { clip: rect(50px, 9999px, 90px, 0); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(60px, 9999px, 10px, 0); }
+            20% { clip: rect(20px, 9999px, 50px, 0); }
+            40% { clip: rect(90px, 9999px, 20px, 0); }
+            60% { clip: rect(10px, 9999px, 80px, 0); }
+            80% { clip: rect(50px, 9999px, 30px, 0); }
+            100% { clip: rect(70px, 9999px, 40px, 0); }
+        }.holo-card {
+            background: rgba(20, 20, 25, 0.6);
+            border: 1px solid rgba(226, 255, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .holo-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(226, 255, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        .holo-scan {
+            position: absolute;
+            top: -100%; left: 0; width: 100%; height: 50%;
+            background: linear-gradient(to bottom, transparent, rgba(226, 255, 0, 0.2), transparent);
+            animation: scan 3s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scan {
+            0% { top: -100%; }
+            100% { top: 200%; }
+        }.tactical-corner {
+            position: absolute;
+            width: 10px; height: 10px;
+            border: 2px solid var(--accent-primary);
+            z-index: 20;
+        }
+        .tc-tl { top: -1px; left: -1px; border-bottom: none; border-right: none; }
+        .tc-tr { top: -1px; right: -1px; border-bottom: none; border-left: none; }
+        .tc-bl { bottom: -1px; left: -1px; border-top: none; border-right: none; }
+        .tc-br { bottom: -1px; right: -1px; border-top: none; border-left: none; }
+        .caution-tape {
+            background: var(--caution-stripe);
+            height: 10px;
+            width: 100%;
+        }.control-hub {
+            background: rgba(10, 10, 12, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 2px solid var(--accent-primary);
+        }
+        .carbon-texture {
+            background-color: var(--carbon-bg);
+            background-image: var(--carbon-fiber);
+            background-size: 16px 16px;
+        }.font-tech { font-family: 'Rajdhani', sans-serif; }
+        .font-mono-tech { font-family: 'JetBrains Mono', monospace; }.hardware-widget {
+            perspective: 1000px;
+        }
+        .hw-inner {
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+        }
+        .hw-plate {
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border: 1px solid #444;
+            box-shadow: inset 0 0 10px #000;
+        }::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased min-h-screen relative selection:bg-yellow-500 selection:text-black">
+<div class="fixed inset-0 pointer-events-none z-0 opacity-20" style="background-image: linear-gradient(0deg, transparent 24%, rgba(32, 255, 77, .03) 25%, rgba(32, 255, 77, .03) 26%, transparent 27%, transparent 74%, rgba(32, 255, 77, .03) 75%, rgba(32, 255, 77, .03) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(32, 255, 77, .03) 25%, rgba(32, 255, 77, .03) 26%, transparent 27%, transparent 74%, rgba(32, 255, 77, .03) 75%, rgba(32, 255, 77, .03) 76%, transparent 77%, transparent); background-size: 50px 50px;">
+</div>
+<div class="relative z-10 w-full max-w-[1920px] mx-auto p-2 sm:p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+<div class="lg:col-span-3 flex flex-col gap-4">
+<header class="panel p-0 flex flex-col group">
+<div class="tactical-corner tc-tl"></div>
+<div class="tactical-corner tc-tr"></div>
+<div class="relative h-48 w-full overflow-hidden bg-black">
+<div class="absolute inset-0 opacity-50 bg-[url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmQ2Z2c3YWQ5ZmQ2Z2c3YWQ5ZmQ2Z2c3YWQ5ZmQ2Z2c3YWQ5ZmQ2ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjeiVyM/giphy.gif')] bg-cover bg-center mix-blend-overlay"></div>
+<img alt="Kaitoartz Avatar" class="w-full h-full object-cover mix-blend-luminosity hover:mix-blend-normal transition-all duration-500 opacity-80 group-hover:opacity-100 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKROguqFJ3O-GrJbJQq0RbB3Fd8sefmDIrdpD1ABs2SnyGJucnCzKuoT5-hlCKZ0LSEQFFcKrY8dXVRlSdvDexoD15eQI4v0h5k6wckmpKUJ57XdKiwEiuluDebyXSvhMFubpTAfdzKEACKEev9-T3uOK-NU-4hOel55T6TRQ8bg7og9rn3W9lVl4WDqrBKhWioHRcTd_rU0al-A1Sy1TmumoORO4kzJkcZKNLtzAtUfpgJscNn4mLPH_KBbxI7QoJ5fQUpVOTd1Pt"/>
+<div class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black to-transparent"></div>
+<div class="absolute bottom-3 left-3">
+<h1 class="text-3xl font-black tracking-tighter text-white glitch-text font-tech" data-text="KAITOARTZ">KAITOARTZ</h1>
+<div class="flex items-center gap-2 mt-1">
+<span class="w-2 h-2 rounded-full bg-[var(--accent-primary)] animate-pulse"></span>
+<span class="text-xs text-[var(--accent-primary)] font-mono tracking-widest">ONLINE // NODE_07</span>
+</div>
+</div>
+</div>
+<div class="p-5 border-t border-[var(--glass-border)] bg-[#0a0a0a]">
+<div class="flex justify-between items-center mb-4">
+<span class="text-xs text-gray-500 font-mono">ROLE_DEF</span>
+<span class="text-xs bg-gray-800 px-2 py-0.5 text-gray-300 rounded font-mono">LVL.99</span>
+</div>
+<p class="text-sm text-gray-300 leading-relaxed font-mono-tech mb-4">
+                        VR DEVELOPER &amp; TECH ARTIST.<br/>
+                        Specialized in immersive procedural shaders and real-time visualization systems.
+                    </p>
+<div class="grid grid-cols-2 gap-2">
+<a class="flex items-center justify-center gap-2 bg-[var(--accent-primary)] text-black py-2 text-xs font-bold tracking-wider hover:bg-white transition-colors" href="#contact">
+<span class="material-symbols-outlined text-sm">mail</span> CONTACT
+                        </a>
+<a class="flex items-center justify-center gap-2 border border-gray-700 text-gray-300 py-2 text-xs font-bold tracking-wider hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] transition-colors" href="assets/cv.pdf">
+                             DOWNLOAD_CV
+                        </a>
+</div>
+</div>
+<div class="caution-tape"></div>
+</header>
+<div class="panel p-4 flex flex-col gap-3">
+<div class="panel-header pl-0 pt-0 border-b-0">
+<span>SYSTEM_VITALS</span>
+<i class="fa-solid fa-microchip text-[var(--accent-tertiary)]"></i>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-black/50 p-2 border border-gray-800 relative overflow-hidden">
+<div class="text-[10px] text-gray-500 mb-1">CPU_LOAD</div>
+<div class="flex items-end gap-1 h-8">
+<div class="w-1 bg-red-500 h-[40%] animate-pulse"></div>
+<div class="w-1 bg-red-500 h-[70%]"></div>
+<div class="w-1 bg-red-500 h-[50%]"></div>
+<div class="w-1 bg-red-500 h-[90%] animate-pulse"></div>
+<div class="w-1 bg-red-500 h-[60%]"></div>
+<div class="w-1 bg-red-500 h-[30%]"></div>
+</div>
+<div class="absolute top-2 right-2 text-xs font-mono text-red-500">84%</div>
+</div>
+<div class="bg-black/50 p-2 border border-gray-800 relative">
+<div class="text-[10px] text-gray-500 mb-1">MEM_ALLOC</div>
+<div class="w-full bg-gray-900 h-1 mb-1">
+<div class="bg-[var(--accent-tertiary)] h-full w-[65%]"></div>
+</div>
+<div class="w-full bg-gray-900 h-1 mb-1">
+<div class="bg-[var(--accent-tertiary)] h-full w-[45%]"></div>
+</div>
+<div class="absolute top-2 right-2 text-xs font-mono text-[var(--accent-tertiary)]">16GB</div>
+</div>
+</div>
+<div class="relative h-24 w-full border border-gray-800 bg-[radial-gradient(circle_at_center,_var(--bg-tactical)_0%,_#000_100%)] flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 border-[0.5px] border-[var(--accent-primary)] opacity-20 rounded-full scale-[0.8] animate-spin" style="animation-duration: 10s;"></div>
+<div class="absolute inset-0 border-[0.5px] border-[var(--accent-primary)] opacity-20 rounded-full scale-[0.6] animate-spin" style="animation-duration: 7s; animation-direction: reverse;"></div>
+<div class="text-[10px] text-[var(--accent-primary)] tracking-widest z-10 bg-black px-2">NET_Global</div>
+</div>
+</div>
+<div class="panel p-0 flex flex-col">
+<a class="flex items-center justify-between p-3 border-b border-gray-800 hover:bg-white/5 transition-colors group" href="https://github.com/kaitoartz" target="_blank">
+<div class="flex items-center gap-3">
+<i class="fa-brands fa-github text-xl text-gray-500 group-hover:text-white"></i>
+<span class="font-mono text-sm group-hover:text-[var(--accent-primary)]">GITHUB_REPO</span>
+</div>
+<span class="text-[10px] font-mono text-gray-600">ID_03</span>
+</a>
+<a class="flex items-center justify-between p-3 border-b border-gray-800 hover:bg-white/5 transition-colors group" href="https://www.linkedin.com/in/kaitoarts" target="_blank">
+<div class="flex items-center gap-3">
+<i class="fa-brands fa-linkedin text-xl text-gray-500 group-hover:text-white"></i>
+<span class="font-mono text-sm group-hover:text-[var(--accent-primary)]">LINKEDIN_NET</span>
+</div>
+<span class="text-[10px] font-mono text-gray-600">ID_04</span>
+</a>
+<a class="flex items-center justify-between p-3 hover:bg-white/5 transition-colors group" href="https://kaitoartz.itch.io/" target="_blank">
+<div class="flex items-center gap-3">
+<i class="fa-brands fa-itch-io text-xl text-gray-500 group-hover:text-white"></i>
+<span class="font-mono text-sm group-hover:text-[var(--accent-primary)]">ITCH.IO_DB</span>
+</div>
+<span class="text-[10px] font-mono text-gray-600">ID_05</span>
+</a>
+</div>
+</div>
+<main class="lg:col-span-7 flex flex-col gap-6" id="main-content">
+<div class="relative border-x border-t border-[var(--glass-border)] bg-[var(--bg-tactical)] p-1">
+<div class="flex justify-between items-center bg-black/40 p-2">
+<div class="flex gap-4 text-xs font-mono text-gray-500">
+<span>LAT: 33.51° S</span>
+<span>LON: 70.75° W</span>
+</div>
+<div class="flex gap-1">
+<div class="w-16 h-2 bg-gray-800 overflow-hidden">
+<div class="h-full bg-[var(--accent-primary)] w-[80%]"></div>
+</div>
+</div>
+</div>
+</div>
+<section class="flex flex-col gap-4">
+<div class="flex justify-between items-end border-b border-[var(--glass-border)] pb-2">
+<h2 class="text-xl font-bold font-tech text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-[var(--accent-primary)]">dataset</span>
+                        PROJECT_ARCHIVE
+                    </h2>
+<div class="flex gap-2">
+<button class="px-3 py-1 text-[10px] border border-[var(--accent-primary)] text-[var(--accent-primary)] bg-[var(--accent-primary)]/10 font-bold hover:bg-[var(--accent-primary)] hover:text-black transition-all">ALL</button>
+<button class="px-3 py-1 text-[10px] border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white transition-all">VR</button>
+<button class="px-3 py-1 text-[10px] border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white transition-all">AR</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<article class="holo-card p-0 group">
+<div class="holo-scan"></div>
+<div class="relative h-48 overflow-hidden">
+<img alt="Project Thumbnail" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfu8G-D91rTvtAX_XwH1qVc-7tlx7B-lEXwdIzRqvjgtBZsEhiedxTSWil3S4eQnh35rm0JaeghEL_zN2dnSs5cs_piC9HZActuhfx7Xc4IUzWDpBuWXxrtFKIlP5JMABVY0LwuLDUxBDwpROVYU9NaZRU5S6-T5800Ut1n4IzGyVImRZ_9LAb3WBFk9Dt5_WoA-Cb7DKCsbq1MzjMXIEJXlNsPznIuI8SMbYDerDIlezSpXZPSwXF9Jp91YdeS54_VpVcgxY7J5L5"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 bg-black/80 border border-[var(--accent-primary)] text-[var(--accent-primary)] text-[10px] px-2 py-0.5 font-bold">
+                                UNREAL 5
+                            </div>
+<div class="absolute bottom-4 left-4">
+<h3 class="text-lg font-bold text-white font-tech tracking-wide mb-1 group-hover:text-[var(--accent-primary)] transition-colors">CREHABITAT_VR</h3>
+<p class="text-xs text-gray-400 font-mono">Interactive arch-viz system.</p>
+</div>
+</div>
+<div class="p-3 bg-[var(--bg-panel)] flex justify-between items-center border-t border-gray-800">
+<span class="text-[10px] text-gray-600 font-mono">FILE_SIZE: 4.2GB</span>
+<i class="fa-solid fa-arrow-right-long text-gray-500 group-hover:text-[var(--accent-primary)] group-hover:translate-x-1 transition-all"></i>
+</div>
+</article>
+<article class="holo-card p-0 group">
+<div class="holo-scan"></div>
+<div class="relative h-48 overflow-hidden bg-gray-900 flex items-center justify-center">
+<div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614726365723-49cfae96e625?q=80&amp;w=2070&amp;auto=format&amp;fit=crop')] bg-cover bg-center opacity-60"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 bg-black/80 border border-cyan-400 text-cyan-400 text-[10px] px-2 py-0.5 font-bold">
+                                UNITY
+                            </div>
+<div class="absolute bottom-4 left-4">
+<h3 class="text-lg font-bold text-white font-tech tracking-wide mb-1 group-hover:text-cyan-400 transition-colors">NEURAL_INTERFACE</h3>
+<p class="text-xs text-gray-400 font-mono">Hand-tracking UI experiment.</p>
+</div>
+</div>
+<div class="p-3 bg-[var(--bg-panel)] flex justify-between items-center border-t border-gray-800">
+<span class="text-[10px] text-gray-600 font-mono">FILE_SIZE: 250MB</span>
+<i class="fa-solid fa-arrow-right-long text-gray-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all"></i>
+</div>
+</article>
+<article class="holo-card p-0 group">
+<div class="holo-scan"></div>
+<div class="relative h-48 overflow-hidden bg-gray-900 flex items-center justify-center">
+<div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1626379953822-baec19c3accd?q=80&amp;w=2070&amp;auto=format&amp;fit=crop')] bg-cover bg-center opacity-60"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 bg-black/80 border border-[var(--accent-secondary)] text-[var(--accent-secondary)] text-[10px] px-2 py-0.5 font-bold">
+                                SHADER
+                            </div>
+<div class="absolute bottom-4 left-4">
+<h3 class="text-lg font-bold text-white font-tech tracking-wide mb-1 group-hover:text-[var(--accent-secondary)] transition-colors">VOLUMETRIC_FOG</h3>
+<p class="text-xs text-gray-400 font-mono">Optimized for mobile VR.</p>
+</div>
+</div>
+<div class="p-3 bg-[var(--bg-panel)] flex justify-between items-center border-t border-gray-800">
+<span class="text-[10px] text-gray-600 font-mono">FILE_SIZE: 12MB</span>
+<i class="fa-solid fa-arrow-right-long text-gray-500 group-hover:text-[var(--accent-secondary)] group-hover:translate-x-1 transition-all"></i>
+</div>
+</article>
+<article class="holo-card p-0 group">
+<div class="holo-scan"></div>
+<div class="relative h-48 overflow-hidden bg-gray-900 flex items-center justify-center">
+<div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&amp;w=2070&amp;auto=format&amp;fit=crop')] bg-cover bg-center opacity-60"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90"></div>
+<div class="absolute top-2 right-2 bg-black/80 border border-purple-400 text-purple-400 text-[10px] px-2 py-0.5 font-bold">
+                                WEBGL
+                            </div>
+<div class="absolute bottom-4 left-4">
+<h3 class="text-lg font-bold text-white font-tech tracking-wide mb-1 group-hover:text-purple-400 transition-colors">CYBER_CITY_GEN</h3>
+<p class="text-xs text-gray-400 font-mono">Procedural city generation.</p>
+</div>
+</div>
+<div class="p-3 bg-[var(--bg-panel)] flex justify-between items-center border-t border-gray-800">
+<span class="text-[10px] text-gray-600 font-mono">FILE_SIZE: 156MB</span>
+<i class="fa-solid fa-arrow-right-long text-gray-500 group-hover:text-purple-400 group-hover:translate-x-1 transition-all"></i>
+</div>
+</article>
+</div>
+</section>
+<section class="panel p-4">
+<div class="tactical-corner tc-bl"></div>
+<div class="panel-header pl-0 pt-0 border-b-0 mb-4">
+<span>SKILL_MATRIX_V2</span>
+<i class="fa-solid fa-layer-group text-[var(--accent-primary)]"></i>
+</div>
+<div class="grid grid-cols-12 gap-2">
+<div class="col-span-12 md:col-span-8 bg-gray-900/50 border border-gray-800 p-4 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-1 bg-[var(--accent-primary)] text-black text-[9px] font-bold">CORE</div>
+<h4 class="text-sm text-gray-300 font-bold mb-3 font-tech">GAME_ENGINES</h4>
+<div class="space-y-3">
+<div>
+<div class="flex justify-between text-xs font-mono mb-1 text-gray-400"><span>UNITY 3D</span><span>95%</span></div>
+<div class="h-1 bg-gray-800 w-full"><div class="h-full bg-white w-[95%]"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-mono mb-1 text-gray-400"><span>UNREAL ENGINE 5</span><span>85%</span></div>
+<div class="h-1 bg-gray-800 w-full"><div class="h-full bg-gray-400 w-[85%]"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-mono mb-1 text-gray-400"><span>WEBGL / THREE.JS</span><span>70%</span></div>
+<div class="h-1 bg-gray-800 w-full"><div class="h-full bg-gray-500 w-[70%]"></div></div>
+</div>
+</div>
+</div>
+<div class="col-span-6 md:col-span-4 bg-gray-900/50 border border-gray-800 p-4 flex flex-col justify-center items-center text-center">
+<i class="fa-solid fa-code text-2xl text-[var(--accent-tertiary)] mb-2"></i>
+<span class="text-xs font-mono text-gray-300">C# / C++</span>
+<span class="text-[9px] text-gray-600 mt-1">NATIVE</span>
+</div>
+<div class="col-span-6 md:col-span-4 bg-gray-900/50 border border-gray-800 p-4 flex flex-col justify-center items-center text-center">
+<i class="fa-solid fa-cube text-2xl text-[var(--accent-secondary)] mb-2"></i>
+<span class="text-xs font-mono text-gray-300">BLENDER</span>
+<span class="text-[9px] text-gray-600 mt-1">MODELING</span>
+</div>
+<div class="col-span-12 md:col-span-8 bg-gray-900/50 border border-gray-800 p-4 flex items-center justify-between">
+<div>
+<span class="block text-xs font-bold text-gray-300">SHADER GRAPH &amp; HLSL</span>
+<span class="text-[10px] text-gray-500">Advanced Visual Effects Programming</span>
+</div>
+<div class="flex gap-1">
+<div class="w-2 h-6 bg-[var(--accent-primary)] opacity-20"></div>
+<div class="w-2 h-6 bg-[var(--accent-primary)] opacity-40"></div>
+<div class="w-2 h-6 bg-[var(--accent-primary)] opacity-60"></div>
+<div class="w-2 h-6 bg-[var(--accent-primary)] opacity-80"></div>
+<div class="w-2 h-6 bg-[var(--accent-primary)]"></div>
+</div>
+</div>
+</div>
+</section>
+<section class="relative">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-sm font-bold font-tech text-gray-400">TIMELINE_LOG</h2>
+<div class="h-[1px] flex-grow mx-4 bg-gray-800"></div>
+<span class="text-[10px] text-gray-600">CHRONO_ORDER</span>
+</div>
+<div class="space-y-4 pl-4 border-l border-dashed border-gray-700 ml-2">
+<div class="relative">
+<div class="absolute -left-[21px] top-1 w-3 h-3 bg-[var(--accent-primary)] rounded-full border-2 border-black"></div>
+<div class="bg-[var(--bg-panel)] p-4 border-l-2 border-[var(--accent-primary)]">
+<span class="text-[10px] text-[var(--accent-primary)] font-mono">2023 - PRESENT</span>
+<h3 class="text-white font-bold text-sm mt-1">LEAD VR DEVELOPER</h3>
+<p class="text-xs text-gray-500 mt-1">Immersive Tech Solutions</p>
+<p class="text-xs text-gray-400 mt-2 leading-relaxed">Leading the development of cross-platform VR training simulations for industrial clients.</p>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] top-1 w-3 h-3 bg-gray-600 rounded-full border-2 border-black"></div>
+<div class="bg-[var(--bg-panel)] p-4 border-l-2 border-gray-700">
+<span class="text-[10px] text-gray-500 font-mono">2021 - 2023</span>
+<h3 class="text-gray-300 font-bold text-sm mt-1">UNITY DEVELOPER</h3>
+<p class="text-xs text-gray-500 mt-1">GameDev Studio Alpha</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<div class="lg:col-span-2 hidden lg:flex flex-col gap-4">
+<div class="control-hub sticky top-4 p-4 rounded-sm flex flex-col gap-4 shadow-lg shadow-[var(--accent-primary)]/5">
+<div class="flex items-center justify-between text-[10px] text-[var(--accent-primary)] font-mono mb-2">
+<span>CONTROL_HUB</span>
+<span class="animate-pulse">● REC</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between group cursor-pointer">
+<span class="text-xs text-gray-400 group-hover:text-white">AUDIO_SFX</span>
+<div class="w-8 h-4 bg-gray-800 rounded-full relative border border-gray-600">
+<div class="absolute left-1 top-0.5 w-2.5 h-2.5 bg-gray-500 rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center justify-between group cursor-pointer">
+<span class="text-xs text-gray-400 group-hover:text-white">HIGH_PERF</span>
+<div class="w-8 h-4 bg-[var(--accent-primary)]/20 rounded-full relative border border-[var(--accent-primary)]">
+<div class="absolute right-1 top-0.5 w-2.5 h-2.5 bg-[var(--accent-primary)] rounded-full shadow-[0_0_5px_var(--accent-primary)]"></div>
+</div>
+</div>
+<div class="flex items-center justify-between group cursor-pointer">
+<span class="text-xs text-gray-400 group-hover:text-white">GRID_VIS</span>
+<div class="w-8 h-4 bg-[var(--accent-primary)]/20 rounded-full relative border border-[var(--accent-primary)]">
+<div class="absolute right-1 top-0.5 w-2.5 h-2.5 bg-[var(--accent-primary)] rounded-full shadow-[0_0_5px_var(--accent-primary)]"></div>
+</div>
+</div>
+</div>
+<div class="mt-4 border-t border-gray-800 pt-4">
+<div class="h-32 bg-black font-mono text-[9px] p-2 text-green-500 overflow-hidden relative">
+<div class="opacity-70">
+                            &gt; SYSTEM_INIT...<br/>
+                            &gt; LOADING_ASSETS...<br/>
+                            &gt; [OK] SHADERS_COMPILED<br/>
+                            &gt; [OK] TEXTURES_LOADED<br/>
+                            &gt; CONNECTING_TO_NODE_07...<br/>
+                            &gt; ACCESS_GRANTED<br/>
+<span class="animate-pulse">_</span>
+</div>
+<div class="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-black to-transparent pointer-events-none"></div>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-gray-800 flex justify-center opacity-50">
+<div class="h-12 w-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMjAiPjxyZWN0IHdpZHRoPSIyIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZmZmIi8+PHJlY3QgeD0iNCIgd2lkdGg9IjQiIGhlaWdodD0iMjAiIGZpbGw9IiNmZmYiLz48cmVjdCB4PSIxMCIgd2lkdGg9IjIiIGhlaWdodD0iMjAiIGZpbGw9IiNmZmYiLz48cmVjdCB4PSIxNCIgd2lkdGg9IjYiIGhlaWdodD0iMjAiIGZpbGw9IiNmZmYiLz48cmVjdCB4PSIyNCIgd2lkdGg9IjIiIGhlaWdodD0iMjAiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')] bg-repeat-x bg-contain"></div>
+</div>
+</div>
+<div class="border border-gray-800 bg-[var(--bg-tactical)] p-2 relative h-32 flex items-center justify-center">
+<div class="absolute top-1 left-2 text-[8px] text-gray-500">RADAR_SCOPE</div>
+<div class="w-24 h-24 rounded-full border border-gray-700 relative flex items-center justify-center">
+<div class="w-full h-[1px] bg-gray-800 absolute top-1/2"></div>
+<div class="h-full w-[1px] bg-gray-800 absolute left-1/2"></div>
+<div class="w-1/2 h-1/2 border border-gray-800 rounded-full animate-ping opacity-20"></div>
+<div class="w-2 h-2 bg-red-500 rounded-full absolute top-6 right-6 shadow-[0_0_5px_red] animate-pulse"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="lg:hidden fixed bottom-0 left-0 right-0 bg-[var(--bg-panel)] border-t border-[var(--accent-primary)] z-50 p-2 flex justify-around backdrop-blur-md">
+<a class="flex flex-col items-center text-gray-400 hover:text-[var(--accent-primary)]" href="#">
+<span class="material-symbols-outlined">home_app_logo</span>
+<span class="text-[9px] font-mono">HOME</span>
+</a>
+<a class="flex flex-col items-center text-gray-400 hover:text-[var(--accent-primary)]" href="#projects">
+<span class="material-symbols-outlined">dataset</span>
+<span class="text-[9px] font-mono">WORK</span>
+</a>
+<a class="flex flex-col items-center text-[var(--accent-primary)]" href="#contact">
+<div class="w-10 h-10 -mt-6 bg-[var(--accent-primary)] rounded-full flex items-center justify-center shadow-[0_0_10px_var(--accent-primary)] border-4 border-black">
+<span class="material-symbols-outlined text-black">terminal</span>
+</div>
+</a>
+<a class="flex flex-col items-center text-gray-400 hover:text-[var(--accent-primary)]" href="#skills">
+<span class="material-symbols-outlined">memory</span>
+<span class="text-[9px] font-mono">STATS</span>
+</a>
+<a class="flex flex-col items-center text-gray-400 hover:text-[var(--accent-primary)]" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[9px] font-mono">CONF</span>
+</a>
+</div>
+<div class="fixed inset-0 z-[-1] pointer-events-none" style="perspective: 1000px; overflow: hidden;">
+<div style="
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background-image: 
+                linear-gradient(rgba(226, 255, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(226, 255, 0, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(60deg) translateY(-20%) translateX(-25%);
+            transform-origin: 50% 0;
+            animation: grid-move 20s linear infinite;
+        "></div>
+<div style="
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 60%;
+            background: linear-gradient(to top, var(--bg-dark), transparent);
+        "></div>
+</div>
+<style>
+        @keyframes grid-move {
+            0% { transform: rotateX(60deg) translateY(0) translateX(-25%); }
+            100% { transform: rotateX(60deg) translateY(50px) translateX(-25%); }
+        }
+    </style>
+<div class="hidden" id="contact"></div>
+
+</body></html>

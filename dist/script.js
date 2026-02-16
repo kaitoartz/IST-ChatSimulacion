@@ -29,14 +29,20 @@ import {
 	FileText,
 	Download,
 	MoreHorizontal,
-	CheckCircle,
-    PhoneOff,
-    Moon,
-    SunMedium,
-    Book,
-    AlertCircle
-} from "https://esm.sh/lucide-react";
-import Markdown from "https://esm.sh/react-markdown";
+	    CheckCircle,
+	    PhoneOff,
+	    Moon,
+	    SunMedium,
+	    Book,
+	    AlertCircle,
+	    Shield,
+	    Route,
+	    Stethoscope,
+	    Coins,
+	    ClipboardCheck,
+	    ChevronDown,
+	    X
+	} from "https://esm.sh/lucide-react";import Markdown from "https://esm.sh/react-markdown";
 
 // Agregar estilos CSS para accesibilidad
 const style = document.createElement('style');
@@ -915,6 +921,148 @@ function AyudaLeyButton({ onClick }) {
   }, React.createElement(Book, { size: 16 }), "📚 Ayuda");
 }
 
+function QuickInfoModal({ onClose, onOpenGlossary }) {
+    const [expandedCard, setExpandedCard] = useState("ley-que-es");
+    const [dontShowAgain, setDontShowAgain] = useState(false);
+
+    const toggleCard = (cardId) => {
+        setExpandedCard(expandedCard === cardId ? null : cardId);
+    };
+
+    const handleStartChat = () => {
+        if (dontShowAgain) {
+            localStorage.setItem("ist_ley16744_seen", "true");
+        }
+        console.log("Telemetry: ley16744_popup_startChat_clicked");
+        console.log("Telemetry: ley16744_popup_closed");
+        onClose();
+    };
+
+    const handleGlossary = (sectionId) => {
+        onOpenGlossary(sectionId);
+    };
+
+    const handleCheckboxChange = (e) => {
+        setDontShowAgain(e.target.checked);
+        if (e.target.checked) {
+             console.log("Telemetry: ley16744_popup_dontShowAgain_checked");
+        }
+    };
+
+    const cards = [
+      {
+        cardId: "ley-que-es",
+        icon: React.createElement(Shield, { size: 20 }),
+        title: "1) ¿Qué es la Ley 16.744 y qué protege?",
+        helpSection: "organismo-administrador",
+        content: [
+          "Es el seguro social obligatorio que protege frente a accidentes del trabajo, accidentes de trayecto y enfermedades profesionales.",
+          "Cubre atención de salud y, si corresponde, beneficios económicos cuando hay incapacidad.",
+          "La administración del seguro está a cargo del ISL y del IST."
+        ]
+      },
+      {
+        cardId: "ley-diferencias",
+        icon: React.createElement(Route, { size: 20 }),
+        title: "2) Diferencias clave: trabajo / trayecto / enfermedad profesional",
+        helpSection: "trayecto",
+        content: [
+          "Accidente del trabajo: lesión a causa o con ocasión del trabajo, que puede generar incapacidad o muerte.",
+          "Accidente de trayecto: ocurre en el trayecto directo entre casa y trabajo (ida o regreso) o entre dos lugares de trabajo.",
+          "Enfermedad profesional: causada de manera directa por el ejercicio del trabajo o profesión y puede generar incapacidad o muerte."
+        ]
+      },
+      {
+        cardId: "prestaciones-medicas",
+        icon: React.createElement(Stethoscope, { size: 20 }),
+        title: "3) Prestaciones médicas: ¿qué incluyen?",
+        helpSection: "prestaciones-medicas",
+        content: [
+          "Atención médica, quirúrgica y dental; hospitalización.",
+          "Medicamentos e insumos; prótesis y aparatos ortopédicos (y su reparación).",
+          "Rehabilitación y gastos necesarios para la atención (incluye traslados cuando corresponde).",
+          "Se otorgan sin costo para la persona trabajadora dentro del seguro."
+        ]
+      },
+      {
+        cardId: "prestaciones-economicas",
+        icon: React.createElement(Coins, { size: 20 }),
+        title: "4) Prestaciones económicas (idea general)",
+        helpSection: "subsidio-incapacidad",
+        content: [
+          "Buscan reemplazar ingresos cuando existe incapacidad por accidente laboral o enfermedad profesional.",
+          "Ejemplos: subsidio por incapacidad temporal; indemnización o pensiones por incapacidad permanente; pensiones por sobrevivencia en caso de fallecimiento.",
+          "En este módulo solo trabajaremos el concepto, no cálculos."
+        ]
+      },
+      {
+        cardId: "que-hacer",
+        icon: React.createElement(ClipboardCheck, { size: 20 }),
+        title: "5) ¿Qué hacer y a quién recurrir? (pasos rápidos)",
+        helpSection: "diat",
+        content: [
+          "1) Prioriza la salud: pide ayuda y traslado seguro si corresponde.",
+          "2) Derígete al organismo administrador que corresponda (IST/ISL) para atención y cobertura.",
+          "3) Activa la denuncia (DIAT): idealmente de inmediato; el empleador debe denunciar dentro de 24 horas de conocido el accidente. Si no está, también puede denunciar la persona trabajadora, testigos, CPHS o médico.",
+          "4) Si es trayecto, guarda respaldos (p. ej., testigos, fotos, parte/croquis si existe).",
+          "Tip: durante el chat tendrás botón de ayuda (\"Ver pista / Ver regla\") si te atoras."
+        ]
+      }
+    ];
+
+    return React.createElement("div", { className: "ist-modal-overlay" },
+        React.createElement("div", { className: "ist-modal-container" },
+            React.createElement("div", { className: "ist-modal-header" },
+                React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' } },
+                    React.createElement("h2", null, "Ficha rápida (1 minuto) — Ley 16.744"),
+                    React.createElement("button", { onClick: onClose, style: { background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: 0 } },
+                        React.createElement(X, { size: 24 })
+                    )
+                ),
+                React.createElement("p", null, "Te damos lo mínimo para que puedas jugar el chat sin saberte la ley de memoria. Puedes abrir/cerrar cada tarjeta.")
+            ),
+            React.createElement("div", { className: "ist-modal-body" },
+                cards.map((card) => 
+                    React.createElement("div", { 
+                        key: card.cardId, 
+                        className: `ist-accordion-item ${expandedCard === card.cardId ? 'expanded' : ''}`
+                    },
+                        React.createElement("div", { className: "ist-accordion-header", onClick: () => toggleCard(card.cardId) },
+                            React.createElement("div", { className: "ist-icon-wrapper" }, card.icon),
+                            React.createElement("span", { className: "ist-accordion-title" }, card.title),
+                            React.createElement(ChevronDown, { size: 18, className: "ist-chevron" })
+                        ),
+                        expandedCard === card.cardId && React.createElement("div", { className: "ist-accordion-content" },
+                            React.createElement("ul", null,
+                                card.content.map((item, idx) => React.createElement("li", { key: idx }, item))
+                            )
+                        )
+                    )
+                )
+            ),
+            React.createElement("div", { className: "ist-modal-footer" },
+                React.createElement("div", { className: "ist-checkbox-wrapper" },
+                    React.createElement("input", { 
+                        type: "checkbox", 
+                        id: "dontShowAgain", 
+                        checked: dontShowAgain,
+                        onChange: handleCheckboxChange
+                    }),
+                    React.createElement("label", { htmlFor: "dontShowAgain" }, "No mostrar de nuevo")
+                ),
+                React.createElement("div", { className: "ist-buttons-wrapper" },
+                    React.createElement("button", { className: "ist-btn ist-btn-secondary", onClick: () => handleGlossary() },
+                        React.createElement(Book, { size: 16, style: { marginRight: '8px' } }), " Abrir glosario"
+                    ),
+                    React.createElement("button", { className: "ist-btn ist-btn-primary", onClick: handleStartChat },
+                        "Continuar"
+                    )
+                )
+            )
+        )
+    );
+}
+
 function WhatsAppSimulator() {
     const [view, setView] = useState("list"); 
 	const [activeChat, setActiveChat] = useState("nico");
@@ -933,6 +1081,37 @@ function WhatsAppSimulator() {
     const [showWelcome, setShowWelcome] = useState(true);
 
 	const [callOpen, setCallOpen] = useState(false);
+    const [showModal, setShowModal] = useState(() => {
+        try {
+            return localStorage.getItem("ist_ley16744_seen") !== "true";
+        } catch (e) {
+            return true;
+        }
+    });
+
+    useEffect(() => {
+        if (showModal) {
+            console.log("Telemetry: ley16744_popup_opened");
+        }
+    }, [showModal]);
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+    };
+
+    const handleOpenGlossary = (sectionId) => {
+        console.log("Telemetry: ley16744_popup_glossary_clicked");
+        setShowModal(false);
+        setActiveChat("ayuda");
+        setView("chat");
+        
+        if (sectionId) {
+            setTimeout(() => {
+                const el = document.getElementById(sectionId);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+    };
     const [nicoStarted, setNicoStarted] = useState(false); // Start Flow flag
 	const ring = useAudio(RING_URL);
 	const notify = useAudio(NOTIFY_URL);
@@ -1662,7 +1841,8 @@ function WhatsAppSimulator() {
 
         React.createElement("div", { className: `phone-frame ${isVibrating ? 'vibrate' : ''}` },
 			React.createElement(SplashScreen, { isLoading: loading, preloadProgress: preloadProgress }),
-			React.createElement(NotificationBanner, { 
+            !showWelcome && showModal && React.createElement(QuickInfoModal, { onClose: handleCloseModal, onOpenGlossary: handleOpenGlossary }),
+			React.createElement(NotificationBanner, {  
 				message: notification.message, 
 				show: notification.show,
 				title: notification.title,
